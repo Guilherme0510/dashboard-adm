@@ -6,11 +6,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 interface FormData {
-    nome: string;
+  nome: string;
   email: string;
   password: string;
   cargo: string;
   disabled: boolean;
+  primeiroPonto: string;
+  segundoPonto: string;
+  terceiroPonto: string;
+  quartoPonto: string;
 }
 
 export const CreateUser: React.FC = () => {
@@ -19,6 +23,10 @@ export const CreateUser: React.FC = () => {
     email: "",
     password: "",
     cargo: "",
+    primeiroPonto: "",
+    segundoPonto: "",
+    terceiroPonto: "",
+    quartoPonto: "",
     disabled: false,
   });
   const [message, setMessage] = useState<string>("");
@@ -56,14 +64,28 @@ export const CreateUser: React.FC = () => {
         nome: formData.nome,
         email: formData.email,
         cargo: formData.cargo,
+        primeiroPonto: formData.primeiroPonto,
+        segundoPonto: formData.segundoPonto,
+        terceiroPonto: formData.terceiroPonto,
+        quartoPonto: formData.quartoPonto,
         createdAt: new Date().toISOString(),
         disabled: formData.disabled,
       });
 
       setMessage(`Usuário criado com sucesso: ${formData.email}`);
-      setFormData({ email: "", password: "", cargo: "", nome: "", disabled: false });
+      setFormData({
+        email: "",
+        password: "",
+        cargo: "",
+        nome: "",
+        primeiroPonto: "",
+        segundoPonto: "",
+        terceiroPonto: "",
+        quartoPonto: "",
+        disabled: false,
+      });
       toast.success("Usuário criado com sucesso");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       setMessage(error.message || "Erro ao criar usuário");
       toast.error("Erro ao criar usuário");
@@ -104,6 +126,54 @@ export const CreateUser: React.FC = () => {
         </div>
         <div className="relative">
           <input
+            id="primeiroPonto"
+            name="primeiroPonto"
+            type="primeiroPonto"
+            value={formData.primeiroPonto}
+            onChange={handleChange}
+            placeholder="Digite o primeiro ponto a ser batido do usuário"
+            className="mt-1 block w-full p-3 bg-gray-500 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+        <div className="relative">
+          <input
+            id="segundoPonto"
+            name="segundoPonto"
+            type="segundoPonto"
+            value={formData.segundoPonto}
+            onChange={handleChange}
+            placeholder="Digite o segundo ponto a ser batido do usuário"
+            className="mt-1 block w-full p-3 bg-gray-500 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+        <div className="relative">
+          <input
+            id="terceiroPonto"
+            name="terceiroPonto"
+            type="terceiroPonto"
+            value={formData.terceiroPonto}
+            onChange={handleChange}
+            placeholder="Digite o terceiro ponto a ser batido do usuário"
+            className="mt-1 block w-full p-3 bg-gray-500 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+        <div className="relative">
+          <input
+            id="quartoPonto"
+            name="quartoPonto"
+            type="quartoPonto"
+            value={formData.quartoPonto}
+            onChange={handleChange}
+            placeholder="Digite o quarto ponto a ser batido do usuário"
+            className="mt-1 block w-full p-3 bg-gray-500 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+        <div className="relative">
+          <input
             id="password"
             name="password"
             type={showPassword ? "text" : "password"}
@@ -130,7 +200,7 @@ export const CreateUser: React.FC = () => {
             className="mt-1 block w-full p-3 bg-gray-500 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
             required
           >
-            <option value="Selecione o cargo" >Selecione o cargo</option>
+            <option value="Selecione o cargo">Selecione o cargo</option>
             <option className="text-black" value="vendas">
               Vendas
             </option>

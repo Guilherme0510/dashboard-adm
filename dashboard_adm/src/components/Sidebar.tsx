@@ -2,6 +2,7 @@ import {
   faChartBar,
   faChartLine,
   faChartPie,
+  faClock,
   faFileAlt,
   faGlobe,
   faQuestionCircle,
@@ -12,8 +13,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signOut } from "firebase/auth";
 import { NavLink, useNavigate } from "react-router-dom";
 import { auth } from "../config/firebaseConfig";
+import { useAuth } from "../context/Context";
+
 
 export const Sidebar = () => {
+  const { nome, avatar, cargo } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -29,13 +33,13 @@ export const Sidebar = () => {
     <div className="flex flex-col items-center text-white h-screen">
       <div className="mt-5 flex flex-col items-center text-center">
         <img
-          src="https://placehold.co/400"
+           src={avatar || "https://placehold.co/400"}
           alt="Imagem Fictícia"
           className="w-[120px] h-[120px] rounded-full"
         />
         <div className="mt-4">
-          <h2 className="text-xl">ADM</h2>
-          <h2 className="text-md">CARGO</h2>
+          <h2 className="text-xl">{nome}</h2>
+          <h2 className="text-md">{cargo}</h2>
         </div>
       </div>
 
@@ -111,6 +115,32 @@ export const Sidebar = () => {
           >
             <FontAwesomeIcon icon={faUsers} className="w-5 h-5" />
             <span>Criar usuário</span>
+          </NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
+                isActive
+                  ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
+                  : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
+              }`
+            }
+            to="/ponto"
+          >
+            <FontAwesomeIcon icon={faClock} className="w-5 h-5" />
+            <span>Ponto Maps</span>
+          </NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
+                isActive
+                  ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
+                  : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
+              }`
+            }
+            to="/listaponto"
+          >
+            <FontAwesomeIcon icon={faClock} className="w-5 h-5" />
+            <span>Relatório de Ponto</span>
           </NavLink>
           <NavLink
             className={({ isActive }) =>
