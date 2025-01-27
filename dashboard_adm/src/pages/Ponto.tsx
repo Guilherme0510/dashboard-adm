@@ -440,9 +440,7 @@ export const Ponto = () => {
           >
             <FaArrowRight />
           </Link>
-          <button className="px-6 py-2 bg-red-500 text-white font-bold rounded-lg shadow hover:bg-red-600">
-            <FaFilePdf />
-          </button>
+          
         </div>
       </div>
     </div>

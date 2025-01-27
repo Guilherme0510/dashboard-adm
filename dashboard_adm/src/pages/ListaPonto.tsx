@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import * as XLSX from "xlsx";
@@ -26,7 +27,6 @@ export const ListaPonto = () => {
   const admUser = "9CfoYP8HtPg7nymfGzrn8GE2NOR2";
 
   useEffect(() => {
-    // Obtém o ID do usuário logado
     const auth = getAuth();
     const usuario = auth.currentUser;
     if (usuario) {
@@ -74,9 +74,8 @@ export const ListaPonto = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "DadosPonto");
 
-    // Adiciona filtro nas colunas
-    const range = ws["!ref"]; // Obtém o intervalo de dados (exemplo: "A1:G100")
-    ws["!autofilter"] = { ref: range }; // Ativa o filtro para o intervalo
+    const range = ws["!ref"]; 
+    ws["!autofilter"] = { ref: range }; 
 
     XLSX.writeFile(wb, "dados_ponto.xlsx");
   };
@@ -127,8 +126,8 @@ export const ListaPonto = () => {
         fecharModal();
 
         // Opcional: Atualize a lista de dados local para refletir a alteração
-        setDadosPonto((prevDados) =>
-          prevDados.map((ponto) =>
+        setDadosPonto((prevDados: any) =>
+          prevDados.map((ponto: any) =>
             ponto.id === pontoSelecionado.id
               ? { ...pontoSelecionado, arquivoURL: fileURL }
               : ponto
@@ -140,7 +139,7 @@ export const ListaPonto = () => {
     }
   };
 
-  const verificarSenha = (valor) => {
+  const verificarSenha = (valor: any) => {
     setSenha(valor);
     setSenhaCorreta(valor === "068543");
   };
