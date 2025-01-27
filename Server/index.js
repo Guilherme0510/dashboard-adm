@@ -1,7 +1,7 @@
-const express = require("express");
-const cors = require("cors");
-const admin = require("./config/admFirebase");
-const { userRouter } = require("./routes/userRoutes");
+import dotenv from 'dotenv' 
+import express from 'express';
+import cors from 'cors' 
+import { userRouter } from './routes/userRoutes.js';
 const app = express();
 app.use(cors());
 app.use(express.json());

@@ -19,7 +19,7 @@ const Layout: React.FC = () => {
       <div className="md:w-1/6 w-full bg-[#35486E]">
         <Sidebar />
       </div>
-      <div className="flex-1 h-screen w-full px-10 bg-[#1F2A40] text-white">
+      <div className="flex-1 w-full px-10 bg-[#1F2A40] text-white">
         <Routes>
           <Route path="/home" element={<Home />} />
           <Route path="/adm-users" element={<AdmUsers />} />

@@ -30,7 +30,7 @@ export const Sidebar = () => {
     }
   };
   return (
-    <div className="flex flex-col items-center text-white h-screen">
+    <div className="flex flex-col items-center text-white">
       <div className="mt-5 flex flex-col items-center text-center">
         <img
            src={avatar || "https://placehold.co/400"}
