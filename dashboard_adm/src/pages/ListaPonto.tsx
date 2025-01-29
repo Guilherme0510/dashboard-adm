@@ -24,7 +24,7 @@ export const ListaPonto = () => {
   const [termoPesquisa, setTermoPesquisa] = useState("");
   const [filtroData, setFiltroData] = useState("");
   const [usuarioLogadoId, setUsuarioLogadoId] = useState(null);
-  const admUser = "9CfoYP8HtPg7nymfGzrn8GE2NOR2";
+  const admUser = "mJT4AdiNCuURJsbibAPcNeMid1I3";
 
   useEffect(() => {
     const auth = getAuth();
@@ -41,8 +41,13 @@ export const ListaPonto = () => {
         const pontosRef = collection(db, "pontos");
         let q = pontosRef;
 
+        // Verifique se o filtro de data foi definido
         if (filtroData) {
-          q = query(pontosRef, where("data", "==", filtroData));
+          // Converte a data selecionada para o formato "dd/mm/aaaa"
+          const filtroDataFormatada = filtroData.split("-").reverse().join("/"); // De "yyyy-mm-dd" para "dd/mm/aaaa"
+
+          // Filtro para buscar dados com o dia exato
+          q = query(pontosRef, where("dia", "==", filtroDataFormatada));
         }
 
         const querySnapshot = await getDocs(q);
@@ -69,15 +74,107 @@ export const ListaPonto = () => {
 
   const totalPaginas = Math.ceil(dadosFiltrados.length / itemsPorPagina);
 
+  const converterParaMinutos = (hora: string) => {
+    const [horas, minutos] = hora.split(":").map(Number);
+    return horas * 60 + minutos;
+  };
+
+  const converterParaHoraFormatada = (minutos: number) => {
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    return `${String(horas).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+  };
+
+  const calcularTotalAtrasos = () => {
+    const totalMinutos = dadosExibidos.reduce((total, ponto) => {
+      // Certifique-se de que atrasos está no formato "hh:mm"
+      if (ponto.atrasos && ponto.atrasos.includes(":")) {
+        return total + converterParaMinutos(ponto.atrasos);
+      }
+      return total;
+    }, 0);
+    return converterParaHoraFormatada(totalMinutos);
+  };
+
   const exportarParaXLS = () => {
-    const ws = XLSX.utils.json_to_sheet(dadosFiltrados);
+    const dadosFormatados = dadosExibidos.map((ponto) => ({
+      Nome: ponto.nome,
+
+      Data: ponto.dia,
+      "Dia da Semana": ponto.diaSemana,
+      "Ponto Entrada": ponto.pontoEntrada,
+      "Ponto Almoço": ponto.pontoAlmoco,
+      "Ponto Volta": ponto.pontoVolta,
+      "Ponto Saída": ponto.pontoSaida,
+      "Horas Extras": ponto.horasExtras,
+      Atrasos: ponto.atrasos,
+      Falta: ponto.falta ? "Sim" : "Não",
+    }));
+
+    // Adicionando a linha de total
+    const totalLinhas = dadosExibidos.length + 1; // A última linha de dados
+    dadosFormatados.push({
+      Nome: "Total",
+      Atrasos: `=SOMA(H2:H${totalLinhas})`, // Fórmula para somar todos os valores na coluna H (Atrasos)
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dadosFormatados, {
+      header: [
+        "Nome",
+        "Data",
+        "Dia da Semana",
+        "Ponto Entrada",
+        "Ponto Almoço",
+        "Ponto Volta",
+        "Ponto Saída",
+        "Horas Extras",
+        "Atrasos",
+        "Falta",
+      ],
+    });
+
+    const styleHeader = {
+      alignment: { horizontal: "center", vertical: "center" },
+      font: { bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "4F81BD" } },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } },
+      },
+    };
+
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = { r: range.s.r, c: col };
+      const cellRef = XLSX.utils.encode_cell(cellAddress);
+      if (!ws[cellRef]) ws[cellRef] = {};
+      ws[cellRef].s = styleHeader;
+    }
+
+    const styleData = {
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } },
+      },
+    };
+
+    for (let row = range.s.r + 1; row <= range.e.r; row++) {
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = { r: row, c: col };
+        const cellRef = XLSX.utils.encode_cell(cellAddress);
+        if (!ws[cellRef]) ws[cellRef] = {};
+        ws[cellRef].s = styleData;
+      }
+    }
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "DadosPonto");
-
-    const range = ws["!ref"]; 
-    ws["!autofilter"] = { ref: range }; 
-
-    XLSX.writeFile(wb, "dados_ponto.xlsx");
+    XLSX.writeFile(wb, "dados_ponto_formatado.xlsx");
   };
 
   const abrirModal = (ponto) => {
@@ -95,9 +192,12 @@ export const ListaPonto = () => {
   const salvarDados = async () => {
     if (pontoSelecionado && pontoSelecionado.id) {
       try {
+        // Formatar a data no formato dd/mm/aaaa
+        const dataFormatada = formatarData(pontoSelecionado.dia);
+  
         // Upload do arquivo para o Firebase Storage
         let fileURL = pontoSelecionado.arquivoURL || null;
-
+  
         if (pontoSelecionado.arquivo) {
           const storage = getStorage();
           const storageRef = ref(
@@ -110,21 +210,19 @@ export const ListaPonto = () => {
           );
           fileURL = await getDownloadURL(snapshot.ref);
         }
-
+  
         // Atualização no Firestore
         const pontoRef = doc(db, "pontos", pontoSelecionado.id);
         await updateDoc(pontoRef, {
           ...pontoSelecionado,
+          dia: dataFormatada, // Salvando a data formatada
           arquivoURL: fileURL, // Salve o URL do arquivo
           arquivo: null, // Evite salvar o arquivo diretamente
         });
-
-        console.log(
-          "Dados atualizados com sucesso no Firestore:",
-          pontoSelecionado
-        );
+  
+        console.log("Dados atualizados com sucesso no Firestore:", pontoSelecionado);
         fecharModal();
-
+  
         // Opcional: Atualize a lista de dados local para refletir a alteração
         setDadosPonto((prevDados: any) =>
           prevDados.map((ponto: any) =>
@@ -138,6 +236,12 @@ export const ListaPonto = () => {
       }
     }
   };
+  
+  // Função para formatar a data
+  const formatarData = (data: string) => {
+    const [ano, mes, dia] = data.split("-");
+    return `${dia}/${mes}/${ano}`;
+  };
 
   const verificarSenha = (valor: any) => {
     setSenha(valor);
@@ -150,7 +254,9 @@ export const ListaPonto = () => {
         <h1 className="text-4xl mb-2">Ponto Maps</h1>
         <p>Verifique seus pontos</p>
       </div>
-
+      {/* <div className="mt-4 text-lg font-bold">
+        Total de Atrasos: {calcularTotalAtrasos()}
+      </div> */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Horas trabalhadas</h2>
         <div className="flex justify-center gap-3">
@@ -159,7 +265,7 @@ export const ListaPonto = () => {
               to="/faltas"
               className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600"
             >
-              Marcar Falta
+              Horário Manual
             </Link>
           )}
           <button
@@ -183,7 +289,7 @@ export const ListaPonto = () => {
         <input
           type="date"
           value={filtroData}
-          onChange={(e) => setFiltroData(e.target.value)}
+          onChange={(e) => setFiltroData(e.target.value)} // Atualiza o valor do filtro de data
           className="p-2 rounded bg-gray-700 text-white w-1/4"
         />
       </div>
