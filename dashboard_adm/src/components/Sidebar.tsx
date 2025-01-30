@@ -17,7 +17,7 @@ import { useAuth } from "../context/Context";
 import { useEffect, useState } from "react";
 
 export const Sidebar = () => {
-  const [usuarioLogadoId, setUsuarioLogadoId] = useState(null);
+  const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
   const admUser = "9CfoYP8HtPg7nymfGzrn8GE2NOR2";
 
   useEffect(() => {

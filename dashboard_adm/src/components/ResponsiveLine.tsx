@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ResponsiveLine } from "@nivo/line";
 import { db } from "../config/firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
@@ -150,8 +150,8 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
               borderRadius: "5px",
             }}
           >
-            <strong>{point.data.label}</strong>
-            <br />
+                        <strong>{point.data.xFormatted}</strong>
+                        <br />
             Vendas: {point.data.yFormatted}
           </div>
         )}
