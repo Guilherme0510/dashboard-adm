@@ -1,4 +1,3 @@
-import React from "react";
 import ResponsiveLineChart from "../components/ResponsiveLine";
 
 export const GraficoLinha = () => {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { GeographicMap } from "../components/GeographicMap";
 
 export const GraficoGeografico = () => {

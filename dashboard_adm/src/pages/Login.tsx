@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from "react";
+import  { FormEvent, useState } from "react";
 import { auth } from "../config/firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";

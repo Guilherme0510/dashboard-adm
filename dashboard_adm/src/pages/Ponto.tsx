@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import  { useState, useEffect } from "react";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { FaArrowRight, FaFilePdf } from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa";
 import { useAuth } from "../context/Context";
 import { Link } from "react-router-dom";
 import {
@@ -15,6 +17,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
+import { Value } from "react-calendar/dist/esm/shared/types.js";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -41,7 +44,7 @@ export const Ponto = () => {
   const [pontoAlmoco, setPontoAlmoco] = useState<string>("");
   const [pontoVolta, setPontoVolta] = useState<string>("");
   const [pontoSaida, setPontoSaida] = useState<string>("");
-  const [dadosDoDia, setDadosDoDia] = useState<any | null>(null);
+  const [, setDadosDoDia] = useState<any | null>(null);
   const [botaoDesabilitado, setBotaoDesabilitado] = useState(false);
 
   const MAX_CLIQUES = 4;
@@ -196,7 +199,6 @@ export const Ponto = () => {
     }
   };
   
-
   const salvarOuAtualizarPontoNoFirebase = async (pontoData: any) => {
     try {
       const dataFormatada = dataSelecionada.toISOString().split("T")[0]; 
@@ -205,7 +207,6 @@ export const Ponto = () => {
     
       const pontoRef = doc(db, "pontos", documentoId);
     
-      // Antes de salvar, garanta que horasExtras e atrasos estão no formato "hh:mm"
       pontoData.horasExtras = horasExtras || "00:00";
       pontoData.atrasos = atrasos || "00:00";
     
@@ -275,8 +276,8 @@ export const Ponto = () => {
       };
       salvarOuAtualizarPontoNoFirebase(pontoData);
     }
-  }, [atrasos]);
-
+  }, [atrasos, dataSelecionada, nome, salvarOuAtualizarPontoNoFirebase]);
+  
   useEffect(() => {
     if (horasExtras) {
       const pontoData = {
@@ -286,7 +287,8 @@ export const Ponto = () => {
       };
       salvarOuAtualizarPontoNoFirebase(pontoData);
     }
-  }, [horasExtras]);
+  }, [horasExtras, dataSelecionada, nome, salvarOuAtualizarPontoNoFirebase]);
+  
   
   const data = {
     labels: ["Horas extras", "Atrasos"],
@@ -317,11 +319,16 @@ export const Ponto = () => {
     },
   };
 
-  const onChange = (date: Date | null) => {
-    if (date) {
-      setDataSelecionada(date);
+  const onChange = (value: Value) => {
+    if (!value) return; // Ignora null
+  
+    const novaData = Array.isArray(value) ? value[0] : value; // Pega a primeira data caso seja um intervalo
+  
+    if (novaData instanceof Date) {
+      setDataSelecionada(novaData);
     }
   };
+  
 
   useEffect(() => {
     if (registrosPonto.length === MAX_CLIQUES) {

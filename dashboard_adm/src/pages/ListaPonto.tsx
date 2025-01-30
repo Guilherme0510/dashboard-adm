@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import {
@@ -16,21 +16,21 @@ import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 
 export const ListaPonto = () => {
-  const [dadosPonto, setDadosPonto] = useState([]);
+  const [dadosPonto, setDadosPonto] = useState<any[]>([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itemsPorPagina = 10;
   const [modalAberto, setModalAberto] = useState(false);
-  const [pontoSelecionado, setPontoSelecionado] = useState(null);
+  const [pontoSelecionado, setPontoSelecionado] = useState<any>(null);
   const [termoPesquisa, setTermoPesquisa] = useState("");
   const [filtroData, setFiltroData] = useState("");
-  const [usuarioLogadoId, setUsuarioLogadoId] = useState(null);
-  const admUser = "mJT4AdiNCuURJsbibAPcNeMid1I3";
+  const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
+  const admUser = import.meta.env.VITE_ADM_USER;
 
   useEffect(() => {
     const auth = getAuth();
     const usuario = auth.currentUser;
     if (usuario) {
-      setUsuarioLogadoId(usuario.uid); // Armazena o ID do usuário logado
+      setUsuarioLogadoId(usuario.uid); 
     }
   }, []);
   const [senha, setSenha] = useState("");
@@ -47,7 +47,7 @@ export const ListaPonto = () => {
           const filtroDataFormatada = filtroData.split("-").reverse().join("/"); // De "yyyy-mm-dd" para "dd/mm/aaaa"
 
           // Filtro para buscar dados com o dia exato
-          q = query(pontosRef, where("dia", "==", filtroDataFormatada));
+          q = query(pontosRef, where("dia", "==", filtroDataFormatada)) as any;
         }
 
         const querySnapshot = await getDocs(q);
@@ -74,27 +74,27 @@ export const ListaPonto = () => {
 
   const totalPaginas = Math.ceil(dadosFiltrados.length / itemsPorPagina);
 
-  const converterParaMinutos = (hora: string) => {
-    const [horas, minutos] = hora.split(":").map(Number);
-    return horas * 60 + minutos;
-  };
+  // const converterParaMinutos = (hora: string) => {
+  //   const [horas, minutos] = hora.split(":").map(Number);
+  //   return horas * 60 + minutos;
+  // };
 
-  const converterParaHoraFormatada = (minutos: number) => {
-    const horas = Math.floor(minutos / 60);
-    const mins = minutos % 60;
-    return `${String(horas).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
-  };
+  // const converterParaHoraFormatada = (minutos: number) => {
+  //   const horas = Math.floor(minutos / 60);
+  //   const mins = minutos % 60;
+  //   return `${String(horas).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+  // };
 
-  const calcularTotalAtrasos = () => {
-    const totalMinutos = dadosExibidos.reduce((total, ponto) => {
-      // Certifique-se de que atrasos está no formato "hh:mm"
-      if (ponto.atrasos && ponto.atrasos.includes(":")) {
-        return total + converterParaMinutos(ponto.atrasos);
-      }
-      return total;
-    }, 0);
-    return converterParaHoraFormatada(totalMinutos);
-  };
+  // const calcularTotalAtrasos = () => {
+  //   const totalMinutos = dadosExibidos.reduce((total, ponto) => {
+  //     // Certifique-se de que atrasos está no formato "hh:mm"
+  //     if (ponto.atrasos && ponto.atrasos.includes(":")) {
+  //       return total + converterParaMinutos(ponto.atrasos);
+  //     }
+  //     return total;
+  //   }, 0);
+  //   return converterParaHoraFormatada(totalMinutos);
+  // };
 
   const exportarParaXLS = () => {
     const dadosFormatados = dadosExibidos.map((ponto) => ({
@@ -115,7 +115,15 @@ export const ListaPonto = () => {
     const totalLinhas = dadosExibidos.length + 1; // A última linha de dados
     dadosFormatados.push({
       Nome: "Total",
-      Atrasos: `=SOMA(H2:H${totalLinhas})`, // Fórmula para somar todos os valores na coluna H (Atrasos)
+      Atrasos: `=SOMA(H2:H${totalLinhas})`,
+      Data: undefined,
+      "Dia da Semana": undefined,
+      "Ponto Entrada": undefined,
+      "Ponto Almoço": undefined,
+      "Ponto Volta": undefined,
+      "Ponto Saída": undefined,
+      "Horas Extras": undefined,
+      Falta: ""
     });
 
     const ws = XLSX.utils.json_to_sheet(dadosFormatados, {
@@ -145,7 +153,7 @@ export const ListaPonto = () => {
       },
     };
 
-    const range = XLSX.utils.decode_range(ws["!ref"]);
+    const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
     for (let col = range.s.c; col <= range.e.c; col++) {
       const cellAddress = { r: range.s.r, c: col };
       const cellRef = XLSX.utils.encode_cell(cellAddress);
@@ -177,7 +185,7 @@ export const ListaPonto = () => {
     XLSX.writeFile(wb, "dados_ponto_formatado.xlsx");
   };
 
-  const abrirModal = (ponto) => {
+  const abrirModal = (ponto: SetStateAction<null>) => {
     setPontoSelecionado(ponto);
     setModalAberto(true);
   };

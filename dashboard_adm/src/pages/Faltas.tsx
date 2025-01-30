@@ -1,9 +1,22 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { collection, setDoc, doc, getDocs } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 
 export const Faltas = () => {
-  const [formData, setFormData] = useState({
+  type FormData = {
+    falta: boolean;
+    nome: string;
+    dia: string;
+    diaSemana: string;
+    pontoEntrada: string;
+    pontoAlmoco: string;
+    pontoVolta: string;
+    pontoSaida: string;
+    atrasos: string;
+    horasExtras: string;
+  };
+
+  const [formData, setFormData] = useState<FormData>({
     falta: true, // Inicialmente "Sim"
     nome: "",
     dia: "",
@@ -34,26 +47,26 @@ export const Faltas = () => {
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target;
-
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+  
     if (name === "pontoEntrada" || name === "pontoAlmoco" || name === "pontoVolta" || name === "pontoSaida" || name === "atrasos" || name === "horasExtras") {
       let formattedValue = value.replace(/[^0-9]/g, "");
-
+  
       if (formattedValue.length > 2 && formattedValue.length <= 4) {
         formattedValue = `${formattedValue.slice(0, 2)}:${formattedValue.slice(2)}`;
       }
-
+  
       if (formattedValue.length > 5) {
         formattedValue = formattedValue.slice(0, 5);
       }
-
+  
       if (formattedValue.replace(":", "").length > 4) {
         return;
       }
-
+  
       setFormData((prev) => ({
         ...prev,
-        [name]: formattedValue,
+        [name as keyof FormData]: formattedValue, // Corrigido aqui
       }));
     } else if (name === "dia") {
       const [year, month, day] = value.split("-");
@@ -61,21 +74,22 @@ export const Faltas = () => {
         const formattedDate = `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
         setFormData((prev) => ({
           ...prev,
-          [name]: formattedDate,
+          [name as keyof FormData]: formattedDate, // Corrigido aqui
         }));
       }
     } else if (name === "falta") {
       setFormData((prev) => ({
         ...prev,
-        [name]: value === "sim", // Atualiza a variável falta com base no valor "sim" ou "não"
+        [name as keyof FormData]: value === "sim", // Corrigido aqui
       }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]: type === "checkbox" ? checked : value,
+        [name as keyof FormData]: type === "checkbox" ? checked : value, // Corrigido aqui
       }));
     }
   };
+  
 
   const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -169,7 +183,7 @@ export const Faltas = () => {
               { label: "Atraso", name: "atrasos" }].map(({ label, name }) => (
                 <label key={name} className="flex flex-col">
                   <span>{label}:</span>
-                  <input type="text" name={name} value={formData[name]} onChange={handleInputChange} className="p-2 rounded bg-gray-200 text-black" />
+                  <input type="text" name={name}  value={String(formData[name as keyof FormData])}  onChange={handleInputChange} className="p-2 rounded bg-gray-200 text-black" />
                 </label>
             ))}
             <label className="flex flex-col col-span-2">
