@@ -96,7 +96,7 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
           legend: "Vendas",
           legendOffset: -40,
         }}
-        pointSize={10}
+        pointSize={8}
         pointColor={{ theme: "background" }}
         pointBorderWidth={2}
         pointBorderColor={{ from: "serieColor" }}

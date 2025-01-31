@@ -24,13 +24,12 @@ export const Sidebar = () => {
     const auth = getAuth();
     const usuario = auth.currentUser;
     if (usuario) {
-      setUsuarioLogadoId(usuario.uid); // Armazena o ID do usuário logado
+      setUsuarioLogadoId(usuario.uid); 
     }
   }, []);
 
   const { nome, avatar, cargo } = useAuth();
   const navigate = useNavigate();
-
   const handleLogout = async () => {
     try {
       await signOut(auth);

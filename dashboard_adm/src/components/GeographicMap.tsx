@@ -95,8 +95,8 @@ export const GeographicMap: React.FC<GeographicMapProps> = ({ mapConfig, vendasD
 
   const getColorForState = (vendas: number) => {
     const { low = '#FF7043', medium = '#FFEB7A', high = '#66BB6A' } = mapConfig?.colorRange || {};
-    if (vendas > 25) return high;
-    if (vendas > 15) return medium;
+    if (vendas > 50) return high;
+    if (vendas > 20) return medium;
     return low;
   };
 
@@ -151,7 +151,6 @@ export const GeographicMap: React.FC<GeographicMapProps> = ({ mapConfig, vendasD
         </ComposableMap>
         <Tooltip id="geographic" content={tooltipContent} />
       </div>
-
       {showTopStatesLegend && (
         <div className="ml-8">
           <h3 className="text-xl font-semibold mb-4">Top 3 Estados com Mais Vendas</h3>
