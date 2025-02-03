@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import Calendar from "react-calendar";
@@ -67,7 +67,6 @@ export const Ponto = () => {
     const formattedMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
     return `${formattedHours}:${formattedMinutes}`;
   };
-  
 
   useEffect(() => {
     const atualizarHora = () => {
@@ -134,30 +133,30 @@ export const Ponto = () => {
     if (intervaloCliques && cargaHoraria) {
       const intervaloCliquesMinutos = parseTimeToMinutes(intervaloCliques);
       const cargaHorariaMinutos = parseTimeToMinutes(cargaHoraria);
-  
+
       if (intervaloCliquesMinutos > cargaHorariaMinutos) {
-        const horasExtrasMinutos = intervaloCliquesMinutos - cargaHorariaMinutos;
+        const horasExtrasMinutos =
+          intervaloCliquesMinutos - cargaHorariaMinutos;
         const horas = Math.floor(horasExtrasMinutos / 60);
         const minutos = horasExtrasMinutos % 60;
-        setHorasExtras(formatTime(horas, minutos)); 
+        setHorasExtras(formatTime(horas, minutos));
         setAtrasos("");
       } else {
         const atrasosMinutos = cargaHorariaMinutos - intervaloCliquesMinutos;
         const horas = Math.floor(atrasosMinutos / 60);
         const minutos = atrasosMinutos % 60;
-        setAtrasos(formatTime(horas, minutos)); 
+        setAtrasos(formatTime(horas, minutos));
         setHorasExtras("");
       }
     }
   }, [intervaloCliques, cargaHoraria]);
-  
 
   const baterPonto = async () => {
     if (cliquesPonto < MAX_CLIQUES) {
       const novosRegistros = [...registrosPonto, horaAtual];
       setRegistrosPonto(novosRegistros);
       setCliquesPonto(cliquesPonto + 1);
-  
+
       const diasDaSemana = [
         "Domingo",
         "Segunda-feira",
@@ -168,76 +167,76 @@ export const Ponto = () => {
         "Sábado",
       ];
       const diaSemana = diasDaSemana[dataSelecionada.getDay()];
-  
+
       const dataFormatada = dataSelecionada.toISOString().split("T")[0];
       const nomeUsuario = nome.replace(/\s+/g, "_");
       const documentoId = `${nomeUsuario}-${dataFormatada}`;
       const pontoRef = doc(db, "pontos", documentoId);
-  
+
       const docSnapshot = await getDoc(pontoRef);
       const dadosAtuais = docSnapshot.exists() ? docSnapshot.data() : {};
-  
+
       const pontoData = {
         dia: dataSelecionada.toLocaleDateString(),
         diaSemana: diaSemana,
         nome: nome,
-        pontoEntrada: dadosAtuais.pontoEntrada || (cliquesPonto === 0 ? horaAtual : null),
-        pontoAlmoco: dadosAtuais.pontoAlmoco || (cliquesPonto === 1 ? horaAtual : null),
-        pontoVolta: dadosAtuais.pontoVolta || (cliquesPonto === 2 ? horaAtual : null),
-        pontoSaida: dadosAtuais.pontoSaida || (cliquesPonto === 3 ? horaAtual : null),
+        pontoEntrada:
+          dadosAtuais.pontoEntrada || (cliquesPonto === 0 ? horaAtual : null),
+        pontoAlmoco:
+          dadosAtuais.pontoAlmoco || (cliquesPonto === 1 ? horaAtual : null),
+        pontoVolta:
+          dadosAtuais.pontoVolta || (cliquesPonto === 2 ? horaAtual : null),
+        pontoSaida:
+          dadosAtuais.pontoSaida || (cliquesPonto === 3 ? horaAtual : null),
         horasExtras: horasExtras || "00:00",
         atrasos: atrasos || "00:00",
       };
-  
+
       await setDoc(pontoRef, pontoData, { merge: true });
       console.log("Ponto registrado/atualizado com sucesso!");
     }
   };
-  
+
   const salvarOuAtualizarPontoNoFirebase = async (pontoData: any) => {
     try {
-      const dataFormatada = dataSelecionada.toISOString().split("T")[0]; 
-      const nomeUsuario = nome.replace(/\s+/g, "_"); 
+      const dataFormatada = dataSelecionada.toISOString().split("T")[0];
+      const nomeUsuario = nome.replace(/\s+/g, "_");
       const documentoId = `${nomeUsuario}-${dataFormatada}`;
-    
+
       const pontoRef = doc(db, "pontos", documentoId);
-    
+
       pontoData.horasExtras = horasExtras || "00:00";
       pontoData.atrasos = atrasos || "00:00";
-    
+
       await setDoc(pontoRef, pontoData, { merge: true });
       console.log("Ponto registrado/atualizado com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar ou atualizar o ponto:", error);
     }
   };
-  
-  
 
   useEffect(() => {
     const carregarPontosDoDia = async () => {
       try {
         const dataFormatada = dataSelecionada.toLocaleDateString();
         const nomeUsuario = nome;
-  
+
         const pontosQuery = query(
           collection(db, "pontos"),
           where("dia", "==", dataFormatada),
           where("nome", "==", nomeUsuario)
         );
-  
+
         const querySnapshot = await getDocs(pontosQuery);
-  
+
         if (!querySnapshot.empty) {
           querySnapshot.forEach((docSnapshot) => {
             const dados = docSnapshot.data();
             setDadosDoDia(dados);
-  
+
             if (dados.pontoEntrada && dados.pontoSaida) {
               setBotaoDesabilitado(true);
             }
-  
-            // Atualiza o estado cliquesPonto com base nos campos preenchidos
             const cliques = [
               dados.pontoEntrada,
               dados.pontoAlmoco,
@@ -245,7 +244,7 @@ export const Ponto = () => {
               dados.pontoSaida,
             ].filter(Boolean).length;
             setCliquesPonto(cliques);
-  
+
             setRegistrosPonto(
               [
                 dados.pontoEntrada,
@@ -260,7 +259,7 @@ export const Ponto = () => {
         console.error("Erro ao carregar os pontos do dia:", error);
       }
     };
-  
+
     carregarPontosDoDia();
   }, [dataSelecionada, nome]);
 
@@ -281,7 +280,7 @@ export const Ponto = () => {
       salvarOuAtualizarPontoNoFirebase(pontoData);
     }
   }, [atrasos, dataSelecionada, nome, salvarOuAtualizarPontoNoFirebase]);
-  
+
   useEffect(() => {
     if (horasExtras) {
       const pontoData = {
@@ -292,8 +291,7 @@ export const Ponto = () => {
       salvarOuAtualizarPontoNoFirebase(pontoData);
     }
   }, [horasExtras, dataSelecionada, nome, salvarOuAtualizarPontoNoFirebase]);
-  
-  
+
   const data = {
     labels: ["Horas extras", "Atrasos"],
     datasets: [
@@ -325,14 +323,13 @@ export const Ponto = () => {
 
   const onChange = (value: Value) => {
     if (!value) return; // Ignora null
-  
+
     const novaData = Array.isArray(value) ? value[0] : value; // Pega a primeira data caso seja um intervalo
-  
+
     if (novaData instanceof Date) {
       setDataSelecionada(novaData);
     }
   };
-  
 
   useEffect(() => {
     if (registrosPonto.length === MAX_CLIQUES) {
@@ -340,48 +337,48 @@ export const Ponto = () => {
     }
   }, [registrosPonto]);
 
-
   useEffect(() => {
     const carregarFaltas = async () => {
       try {
         const nomeUsuario = nome; // Nome do usuário logado
-  
+
         // Consulta para buscar os documentos que têm 'falta' igual a true
         const faltasQuery = query(
           collection(db, "pontos"),
-          where("nome", "==", nomeUsuario),  // Verifica pelo nome do usuário logado
-          where("falta", "==", true)         // Verifica se falta é true
+          where("nome", "==", nomeUsuario), // Verifica pelo nome do usuário logado
+          where("falta", "==", true) // Verifica se falta é true
         );
-  
+
         const querySnapshot = await getDocs(faltasQuery);
-  
+
         // Contabiliza as faltas
         setFaltas(querySnapshot.size); // Número de documentos encontrados com falta = true
       } catch (error) {
         console.error("Erro ao carregar as faltas:", error);
       }
     };
-  
+
     carregarFaltas();
   }, [nome]);
 
   return (
-    <div className="h-screen flex flex-col text-white p-6">
+    <div className="flex flex-col text-white p-6">
       <div className="mb-8">
         <h1 className="text-4xl mb-2">Ponto Maps</h1>
         <p>Bata seu ponto</p>
       </div>
-      <div className="flex justify-start gap-6">
-        <div className="w-[370px] h-[390px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
+
+      <div className="flex flex-wrap gap-6">
+        <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
           <div className="mb-4 text-xl font-bold">{horaAtual}</div>
-          <div className="w-[148px] h-[270px] bg-white rounded-full overflow-hidden flex items-center justify-center">
+          <div className="w-[148px] h-[148px] bg-white rounded-full overflow-hidden flex items-center justify-center">
             <img
               src={avatar || "https://placehold.co/400"}
               alt="Imagem de perfil"
               className="w-full h-full object-cover"
             />
           </div>
-          <h1 className="text-lg mt-2">{nome}</h1>
+          <h2 className="text-xl capitalize mt-2">{nome.replace(".", " ")}</h2>
           <button
             className={`mt-4 px-6 py-2 font-bold rounded-lg shadow ${
               botaoDesabilitado
@@ -394,9 +391,9 @@ export const Ponto = () => {
             {botaoDesabilitado ? "Pontos do dia registrados" : "Bater o Ponto"}
           </button>
         </div>
-        <div className="w-[370px] h-[390px] bg-[#35486E] p-10 gap-2 flex flex-col items-start justify-start rounded-lg shadow-lg">
-          <h3>Carga Horaria Estimada: {cargaHoraria} por dia.</h3>
 
+        <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-start justify-start rounded-lg shadow-lg">
+          <h3>Carga Horária Estimada: {cargaHoraria} por dia.</h3>
           <ul className="text-lg">
             {horarios.map((item, index) => (
               <li key={index} className="flex justify-between w-full">
@@ -414,28 +411,28 @@ export const Ponto = () => {
             ))}
           </ul>
         </div>
-        <div className="w-[370px] h-[390px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
+
+        <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Horas trabalhadas</h2>
-          {/* <h3>
-            Horário trabalhado hoje: {intervaloCliques || "Aguardando pontos."}
-          </h3> */}
           <h3>Horas extras: {horasExtras}</h3>
           <h3>Atrasos: {atrasos}</h3>
           <div className="w-full h-[250px]">
             <Pie data={data} options={options} />
           </div>
         </div>
-        <div className="w-[370px] h-[390px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
+
+        <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Faltas</h2>
           <div className="text-xl mb-4">
             <strong>Quantidade de faltas:</strong> {faltas}
           </div>
         </div>
       </div>
-      <div className="flex justify-start gap-6">
-        <div className="w-[765px] h-[390px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg mt-4">
+
+      <div className="flex flex-wrap gap-6 mt-6">
+        <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Calendário</h2>
-          <div className="w-[585px] h-[390px]">
+          <div className="w-full">
             <Calendar
               onChange={onChange}
               value={dataSelecionada}
@@ -443,7 +440,8 @@ export const Ponto = () => {
             />
           </div>
         </div>
-        <div className="w-[765px] h-[390px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg mt-4">
+
+        <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Relatório de Pontos</h2>
           <Link
             to="/listaponto"
@@ -451,7 +449,6 @@ export const Ponto = () => {
           >
             <FaArrowRight />
           </Link>
-          
         </div>
       </div>
     </div>

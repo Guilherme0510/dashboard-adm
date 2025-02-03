@@ -49,7 +49,7 @@ export const Sidebar = () => {
           className="w-[120px] h-[120px] rounded-full"
         />
         <div className="mt-4">
-          <h2 className="text-xl">{nome}</h2>
+          <h2 className="text-xl capitalize">{nome.replace('.', ' ')}</h2>
           <h2 className="text-md">{cargo}</h2>
         </div>
       </div>
