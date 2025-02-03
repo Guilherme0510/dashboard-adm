@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   setDoc,
@@ -40,10 +41,10 @@ export const Ponto = () => {
   const [intervaloCliques, setIntervaloCliques] = useState<string>("");
   const [horasExtras, setHorasExtras] = useState<string>("");
   const [atrasos, setAtrasos] = useState<string>("");
-  const [pontoEntrada, setPontoEntrada] = useState<string>("");
-  const [pontoAlmoco, setPontoAlmoco] = useState<string>("");
-  const [pontoVolta, setPontoVolta] = useState<string>("");
-  const [pontoSaida, setPontoSaida] = useState<string>("");
+  // const [pontoEntrada, setPontoEntrada] = useState<string>("");
+  // const [pontoAlmoco, setPontoAlmoco] = useState<string>("");
+  // const [pontoVolta, setPontoVolta] = useState<string>("");
+  // const [pontoSaida, setPontoSaida] = useState<string>("");
   const [, setDadosDoDia] = useState<any | null>(null);
   const [botaoDesabilitado, setBotaoDesabilitado] = useState(false);
 
@@ -138,26 +139,25 @@ export const Ponto = () => {
         const horasExtrasMinutos = intervaloCliquesMinutos - cargaHorariaMinutos;
         const horas = Math.floor(horasExtrasMinutos / 60);
         const minutos = horasExtrasMinutos % 60;
-        setHorasExtras(formatTime(horas, minutos)); // Formata como "hh:mm"
+        setHorasExtras(formatTime(horas, minutos)); 
         setAtrasos("");
       } else {
         const atrasosMinutos = cargaHorariaMinutos - intervaloCliquesMinutos;
         const horas = Math.floor(atrasosMinutos / 60);
         const minutos = atrasosMinutos % 60;
-        setAtrasos(formatTime(horas, minutos)); // Formata como "hh:mm"
+        setAtrasos(formatTime(horas, minutos)); 
         setHorasExtras("");
       }
     }
   }, [intervaloCliques, cargaHoraria]);
   
 
-  const baterPonto = () => {
+  const baterPonto = async () => {
     if (cliquesPonto < MAX_CLIQUES) {
       const novosRegistros = [...registrosPonto, horaAtual];
       setRegistrosPonto(novosRegistros);
       setCliquesPonto(cliquesPonto + 1);
   
-      // Obter dia da semana em português
       const diasDaSemana = [
         "Domingo",
         "Segunda-feira",
@@ -169,33 +169,28 @@ export const Ponto = () => {
       ];
       const diaSemana = diasDaSemana[dataSelecionada.getDay()];
   
+      const dataFormatada = dataSelecionada.toISOString().split("T")[0];
+      const nomeUsuario = nome.replace(/\s+/g, "_");
+      const documentoId = `${nomeUsuario}-${dataFormatada}`;
+      const pontoRef = doc(db, "pontos", documentoId);
+  
+      const docSnapshot = await getDoc(pontoRef);
+      const dadosAtuais = docSnapshot.exists() ? docSnapshot.data() : {};
+  
       const pontoData = {
         dia: dataSelecionada.toLocaleDateString(),
-        diaSemana: diaSemana, // Adiciona o dia da semana
+        diaSemana: diaSemana,
         nome: nome,
-        pontoEntrada: pontoEntrada,
-        pontoAlmoco: pontoAlmoco,
-        pontoVolta: pontoVolta,
-        pontoSaida: pontoSaida,
-        horasExtras: horasExtras,
-        atrasos: atrasos,
+        pontoEntrada: dadosAtuais.pontoEntrada || (cliquesPonto === 0 ? horaAtual : null),
+        pontoAlmoco: dadosAtuais.pontoAlmoco || (cliquesPonto === 1 ? horaAtual : null),
+        pontoVolta: dadosAtuais.pontoVolta || (cliquesPonto === 2 ? horaAtual : null),
+        pontoSaida: dadosAtuais.pontoSaida || (cliquesPonto === 3 ? horaAtual : null),
+        horasExtras: horasExtras || "00:00",
+        atrasos: atrasos || "00:00",
       };
   
-      if (cliquesPonto === 0) {
-        setPontoEntrada(horaAtual);
-        pontoData.pontoEntrada = horaAtual;
-      } else if (cliquesPonto === 1) {
-        setPontoAlmoco(horaAtual);
-        pontoData.pontoAlmoco = horaAtual;
-      } else if (cliquesPonto === 2) {
-        setPontoVolta(horaAtual);
-        pontoData.pontoVolta = horaAtual;
-      } else if (cliquesPonto === 3) {
-        setPontoSaida(horaAtual);
-        pontoData.pontoSaida = horaAtual;
-      }
-  
-      salvarOuAtualizarPontoNoFirebase(pontoData);
+      await setDoc(pontoRef, pontoData, { merge: true });
+      console.log("Ponto registrado/atualizado com sucesso!");
     }
   };
   
@@ -224,24 +219,33 @@ export const Ponto = () => {
       try {
         const dataFormatada = dataSelecionada.toLocaleDateString();
         const nomeUsuario = nome;
-
+  
         const pontosQuery = query(
           collection(db, "pontos"),
           where("dia", "==", dataFormatada),
           where("nome", "==", nomeUsuario)
         );
-
+  
         const querySnapshot = await getDocs(pontosQuery);
-
+  
         if (!querySnapshot.empty) {
           querySnapshot.forEach((docSnapshot) => {
             const dados = docSnapshot.data();
             setDadosDoDia(dados);
-
+  
             if (dados.pontoEntrada && dados.pontoSaida) {
-              setBotaoDesabilitado(true)
+              setBotaoDesabilitado(true);
             }
-
+  
+            // Atualiza o estado cliquesPonto com base nos campos preenchidos
+            const cliques = [
+              dados.pontoEntrada,
+              dados.pontoAlmoco,
+              dados.pontoVolta,
+              dados.pontoSaida,
+            ].filter(Boolean).length;
+            setCliquesPonto(cliques);
+  
             setRegistrosPonto(
               [
                 dados.pontoEntrada,
@@ -256,7 +260,7 @@ export const Ponto = () => {
         console.error("Erro ao carregar os pontos do dia:", error);
       }
     };
-
+  
     carregarPontosDoDia();
   }, [dataSelecionada, nome]);
 

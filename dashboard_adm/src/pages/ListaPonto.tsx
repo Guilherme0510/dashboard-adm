@@ -30,7 +30,7 @@ export const ListaPonto = () => {
     const auth = getAuth();
     const usuario = auth.currentUser;
     if (usuario) {
-      setUsuarioLogadoId(usuario.uid); 
+      setUsuarioLogadoId(usuario.uid);
     }
   }, []);
   const [senha, setSenha] = useState("");
@@ -123,7 +123,7 @@ export const ListaPonto = () => {
       "Ponto Volta": undefined,
       "Ponto Saída": undefined,
       "Horas Extras": undefined,
-      Falta: ""
+      Falta: "",
     });
 
     const ws = XLSX.utils.json_to_sheet(dadosFormatados, {
@@ -200,12 +200,8 @@ export const ListaPonto = () => {
   const salvarDados = async () => {
     if (pontoSelecionado && pontoSelecionado.id) {
       try {
-        // Formatar a data no formato dd/mm/aaaa
         const dataFormatada = formatarData(pontoSelecionado.dia);
-  
-        // Upload do arquivo para o Firebase Storage
         let fileURL = pontoSelecionado.arquivoURL || null;
-  
         if (pontoSelecionado.arquivo) {
           const storage = getStorage();
           const storageRef = ref(
@@ -218,20 +214,20 @@ export const ListaPonto = () => {
           );
           fileURL = await getDownloadURL(snapshot.ref);
         }
-  
-        // Atualização no Firestore
+
         const pontoRef = doc(db, "pontos", pontoSelecionado.id);
         await updateDoc(pontoRef, {
           ...pontoSelecionado,
-          dia: dataFormatada, // Salvando a data formatada
-          arquivoURL: fileURL, // Salve o URL do arquivo
-          arquivo: null, // Evite salvar o arquivo diretamente
+          dia: dataFormatada,
+          arquivoURL: fileURL,
+          arquivo: null,
         });
-  
-        console.log("Dados atualizados com sucesso no Firestore:", pontoSelecionado);
+
+        console.log(
+          "Dados atualizados com sucesso no Firestore:",
+          pontoSelecionado
+        );
         fecharModal();
-  
-        // Opcional: Atualize a lista de dados local para refletir a alteração
         setDadosPonto((prevDados: any) =>
           prevDados.map((ponto: any) =>
             ponto.id === pontoSelecionado.id
@@ -244,8 +240,6 @@ export const ListaPonto = () => {
       }
     }
   };
-  
-  // Função para formatar a data
   const formatarData = (data: string) => {
     const [ano, mes, dia] = data.split("-");
     return `${dia}/${mes}/${ano}`;
