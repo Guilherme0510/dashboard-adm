@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SetStateAction, useEffect, useState } from "react";
 import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
-import * as XLSX from "xlsx";
+import { utils, writeFileXLSX } from "xlsx";
 import {
   collection,
   doc,
@@ -35,21 +35,16 @@ export const ListaPonto = () => {
   }, []);
   const [senha, setSenha] = useState("");
   const [senhaCorreta, setSenhaCorreta] = useState(false);
+  
   useEffect(() => {
     const fetchDados = async () => {
       try {
         const pontosRef = collection(db, "pontos");
         let q = pontosRef;
-
-        // Verifique se o filtro de data foi definido
         if (filtroData) {
-          // Converte a data selecionada para o formato "dd/mm/aaaa"
-          const filtroDataFormatada = filtroData.split("-").reverse().join("/"); // De "yyyy-mm-dd" para "dd/mm/aaaa"
-
-          // Filtro para buscar dados com o dia exato
+          const filtroDataFormatada = filtroData.split("-").reverse().join("/"); 
           q = query(pontosRef, where("dia", "==", filtroDataFormatada)) as any;
         }
-
         const querySnapshot = await getDocs(q);
         const dados = querySnapshot.docs.map((doc) => ({
           id: doc.id,
@@ -60,10 +55,114 @@ export const ListaPonto = () => {
         console.error("Erro ao buscar dados:", error);
       }
     };
-
+  
     fetchDados();
-  }, [filtroData]);
-
+  }, [filtroData]); // Esse efeito só busca os pontos e atualiza `dadosPonto`
+  
+  useEffect(() => {
+    if (dadosPonto.length === 0) return; // Só calcula se houver dados
+  
+    const calcularAtrasoEHoraExtra = async () => {
+      try {
+        const usuariosRef = collection(db, "usuarios");
+        const usuariosSnapshot = await getDocs(usuariosRef);
+  
+        // Criar um mapa com os horários dos usuários
+        const horariosUsuarios = usuariosSnapshot.docs.reduce((acc, doc) => {
+          const nomeUsuario = doc.data().nome; // Usando o nome para corresponder ao ponto
+          acc[nomeUsuario] = {
+            primeiroPonto: doc.data().primeiroPonto?.trim(),
+            segundoPonto: doc.data().segundoPonto?.trim(),
+            terceiroPonto: doc.data().terceiroPonto?.trim(),
+            quartoPonto: doc.data().quartoPonto?.trim(),
+          };
+          return acc;
+        }, {} as Record<string, any>);
+  
+  
+        const novosDadosPonto = dadosPonto.map((ponto) => {
+          const horariosEsperados = horariosUsuarios[ponto.nome]; // Usamos o nome para corresponder
+  
+          if (!horariosEsperados) {
+            console.log(`Usuário não encontrado para o ponto ${ponto.nome}`);
+            return ponto; // Se não encontrar o usuário, mantém os dados inalterados
+          }
+  
+          // Corrigir formato de horário e criar Date corretamente
+          const criarData = (hora: string) => {
+            const [horaParte, minutoParte] = hora.split(':').map((parte) => parte.trim());
+            return new Date(`1970-01-01T${horaParte}:${minutoParte}:00`);
+          };
+  
+          const entradaReal = ponto.pontoEntrada ? criarData(ponto.pontoEntrada) : null;
+          const almocoSaida = ponto.pontoAlmoco ? criarData(ponto.pontoAlmoco) : null;
+          const almocoVolta = ponto.pontoVolta ? criarData(ponto.pontoVolta) : null;
+          const saidaReal = ponto.pontoSaida ? criarData(ponto.pontoSaida) : null;
+  
+          const entradaEsperada = horariosEsperados.primeiroPonto ? criarData(horariosEsperados.primeiroPonto) : null;
+          const saidaEsperada = horariosEsperados.quartoPonto ? criarData(horariosEsperados.quartoPonto) : null;
+  
+  
+          let atraso = 0;
+          let horasExtras = 0;
+          let horasTrabalhadas = 0;
+  
+          // Calcular atraso se entrou depois do horário esperado
+          if (entradaReal && entradaEsperada && entradaReal > entradaEsperada) {
+            atraso = (entradaReal.getTime() - entradaEsperada.getTime()) / 60000; // Atraso em minutos
+          }
+  
+          // Calcular horas trabalhadas
+          if (entradaReal && saidaReal) {
+            // Calcular a diferença entre entrada e saída
+            horasTrabalhadas = (saidaReal.getTime() - entradaReal.getTime()) / 3600000; // Converter ms para horas
+  
+            // Subtrair o tempo de almoço, se houver
+            if (almocoSaida && almocoVolta) {
+              const tempoAlmoco = (almocoVolta.getTime() - almocoSaida.getTime()) / 3600000;
+              horasTrabalhadas -= tempoAlmoco;
+            }
+          }
+  
+          // Calcular a jornada esperada em horas
+          const jornadaEsperada = entradaEsperada && saidaEsperada
+          ? (saidaEsperada.getTime() - entradaEsperada.getTime()) / 3600000
+          : 0;
+        
+        // Corrigir cálculo das horas extras
+        const jornadaEfetiva = jornadaEsperada - (almocoSaida && almocoVolta ? (almocoVolta.getTime() - almocoSaida.getTime()) / 3600000 : 0);
+        
+        if (horasTrabalhadas > jornadaEfetiva) {
+          horasExtras = horasTrabalhadas - jornadaEfetiva;
+        } else {
+          horasExtras = 0;
+        }
+        
+  
+          const formatarHoraMinuto = (horas: number) => {
+            const minutos = Math.round(horas * 60);
+            const horasFormatadas = Math.floor(minutos / 60);
+            const minutosRestantes = minutos % 60;
+            return `${String(horasFormatadas).padStart(2, "0")}:${String(minutosRestantes).padStart(2, "0")}`;
+          };
+  
+          // Atualizar os valores para os campos de atraso e horas extras
+          return {
+            ...ponto,
+            atrasos: formatarHoraMinuto(atraso / 60), // Atraso no formato HH:mm
+            horasExtras: formatarHoraMinuto(horasExtras), // Horas extras no formato HH:mm
+          };
+        });
+  
+        setDadosPonto(novosDadosPonto);
+      } catch (error) {
+        console.error("Erro ao calcular atraso e hora extra:", error);
+      }
+    };
+  
+    calcularAtrasoEHoraExtra();
+  }, [dadosPonto]);
+  
   const dadosFiltrados = dadosPonto.filter((ponto) =>
     ponto.nome.toLowerCase().includes(termoPesquisa.toLowerCase())
   );
@@ -74,116 +173,92 @@ export const ListaPonto = () => {
 
   const totalPaginas = Math.ceil(dadosFiltrados.length / itemsPorPagina);
 
-  // const converterParaMinutos = (hora: string) => {
-  //   const [horas, minutos] = hora.split(":").map(Number);
-  //   return horas * 60 + minutos;
-  // };
-
-  // const converterParaHoraFormatada = (minutos: number) => {
-  //   const horas = Math.floor(minutos / 60);
-  //   const mins = minutos % 60;
-  //   return `${String(horas).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
-  // };
-
-  // const calcularTotalAtrasos = () => {
-  //   const totalMinutos = dadosExibidos.reduce((total, ponto) => {
-  //     // Certifique-se de que atrasos está no formato "hh:mm"
-  //     if (ponto.atrasos && ponto.atrasos.includes(":")) {
-  //       return total + converterParaMinutos(ponto.atrasos);
-  //     }
-  //     return total;
-  //   }, 0);
-  //   return converterParaHoraFormatada(totalMinutos);
-  // };
-
-  const exportarParaXLS = () => {
-    const dadosFormatados = dadosExibidos.map((ponto) => ({
-      Nome: ponto.nome,
-
-      Data: ponto.dia,
-      "Dia da Semana": ponto.diaSemana,
-      "Ponto Entrada": ponto.pontoEntrada,
-      "Ponto Almoço": ponto.pontoAlmoco,
-      "Ponto Volta": ponto.pontoVolta,
-      "Ponto Saída": ponto.pontoSaida,
-      "Horas Extras": ponto.horasExtras,
-      Atrasos: ponto.atrasos,
+const exportarParaXLS = () => {
+  try {
+    const dadosFormatados = dadosFiltrados.map((ponto) => ({
+      Nome: ponto.nome ?? "",
+      Data: ponto.dia ?? "",
+      "Dia da Semana": ponto.diaSemana ?? "",
+      "Ponto Entrada": ponto.pontoEntrada ?? "",
+      "Ponto Almoço": ponto.pontoAlmoco ?? "",
+      "Ponto Volta": ponto.pontoVolta ?? "",
+      "Ponto Saída": ponto.pontoSaida ?? "",
+      "Horas Extras": ponto.horasExtras ?? "",
+      Atrasos: ponto.atrasos ?? "",
       Falta: ponto.falta ? "Sim" : "Não",
     }));
 
-    // Adicionando a linha de total
-    const totalLinhas = dadosExibidos.length + 1; // A última linha de dados
     dadosFormatados.push({
-      Nome: "Total",
-      Atrasos: `=SOMA(H2:H${totalLinhas})`,
-      Data: undefined,
-      "Dia da Semana": undefined,
-      "Ponto Entrada": undefined,
-      "Ponto Almoço": undefined,
-      "Ponto Volta": undefined,
-      "Ponto Saída": undefined,
-      "Horas Extras": undefined,
+      Nome: "",
+      Data: "",
+      "Dia da Semana": "",
+      "Ponto Entrada": "",
+      "Ponto Almoço": "",
+      "Ponto Volta": "",
+      "Ponto Saída": "",
+      "Horas Extras": "",
+      Atrasos: "",
       Falta: "",
     });
 
-    const ws = XLSX.utils.json_to_sheet(dadosFormatados, {
-      header: [
-        "Nome",
-        "Data",
-        "Dia da Semana",
-        "Ponto Entrada",
-        "Ponto Almoço",
-        "Ponto Volta",
-        "Ponto Saída",
-        "Horas Extras",
-        "Atrasos",
-        "Falta",
-      ],
-    });
+    const resumoMensal = Object.values(
+      dadosFiltrados.reduce((acc, ponto) => {
+        if (!acc[ponto.nome]) {
+          acc[ponto.nome] = {
+            Nome: ponto.nome ?? "",
+            "Total de Dias Trabalhados": 0,
+            "Total de Atrasos": 0,
+            "Total de Horas Extras": 0,
+            "Total de Faltas": 0,
+          };
+        }
 
-    const styleHeader = {
-      alignment: { horizontal: "center", vertical: "center" },
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "4F81BD" } },
-      border: {
-        top: { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "thin", color: { rgb: "000000" } },
-        left: { style: "thin", color: { rgb: "000000" } },
-        right: { style: "thin", color: { rgb: "000000" } },
-      },
-    };
+        acc[ponto.nome]["Total de Dias Trabalhados"] += 1;
+        acc[ponto.nome]["Total de Atrasos"] += ponto.atrasos
+          ? parseFloat(ponto.atrasos) || 0
+          : 0;
+        acc[ponto.nome]["Total de Horas Extras"] += ponto.horasExtras
+          ? parseFloat(ponto.horasExtras) || 0
+          : 0;
+        acc[ponto.nome]["Total de Faltas"] += ponto.falta ? 1 : 0;
 
-    const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
-    for (let col = range.s.c; col <= range.e.c; col++) {
-      const cellAddress = { r: range.s.r, c: col };
-      const cellRef = XLSX.utils.encode_cell(cellAddress);
-      if (!ws[cellRef]) ws[cellRef] = {};
-      ws[cellRef].s = styleHeader;
-    }
+        return acc;
+      }, {})
+    );
 
-    const styleData = {
-      alignment: { horizontal: "center", vertical: "center" },
-      border: {
-        top: { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "thin", color: { rgb: "000000" } },
-        left: { style: "thin", color: { rgb: "000000" } },
-        right: { style: "thin", color: { rgb: "000000" } },
-      },
-    };
+    const wsDadosPonto = utils.json_to_sheet(dadosFormatados);
+    const wsResumo = utils.json_to_sheet(resumoMensal);
 
-    for (let row = range.s.r + 1; row <= range.e.r; row++) {
-      for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellAddress = { r: row, c: col };
-        const cellRef = XLSX.utils.encode_cell(cellAddress);
-        if (!ws[cellRef]) ws[cellRef] = {};
-        ws[cellRef].s = styleData;
-      }
-    }
+    wsDadosPonto["!cols"] = [
+      { wch: 20 }, // Nome
+      { wch: 15 }, // Data
+      { wch: 15 }, // Dia da Semana
+      { wch: 15 }, // Ponto Entrada
+      { wch: 15 }, // Ponto Almoço
+      { wch: 15 }, // Ponto Volta
+      { wch: 15 }, // Ponto Saída
+      { wch: 15 }, // Horas Extras
+      { wch: 15 }, // Atrasos
+      { wch: 10 }, // Falta
+    ];
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "DadosPonto");
-    XLSX.writeFile(wb, "dados_ponto_formatado.xlsx");
-  };
+    wsResumo["!cols"] = [
+      { wch: 20 }, // Nome
+      { wch: 20 }, // Total de Dias Trabalhados
+      { wch: 15 }, // Total de Atrasos
+      { wch: 15 }, // Total de Horas Extras
+      { wch: 15 }, // Total de Faltas
+    ];
+
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, wsDadosPonto, "Dados Ponto Gerais");
+    utils.book_append_sheet(wb, wsResumo, "Resumo Mensal");
+
+    writeFileXLSX(wb, "relatorio_ponto.xlsx");
+  } catch (error) {
+    console.error("Erro ao exportar para XLSX:", error);
+  }
+};
 
   const abrirModal = (ponto: SetStateAction<null>) => {
     setPontoSelecionado(ponto);
@@ -247,7 +322,7 @@ export const ListaPonto = () => {
 
   const verificarSenha = (valor: any) => {
     setSenha(valor);
-    setSenhaCorreta(valor === "068543");
+    setSenhaCorreta(valor === "2025@maps");
   };
 
   return (
@@ -291,7 +366,7 @@ export const ListaPonto = () => {
         <input
           type="date"
           value={filtroData}
-          onChange={(e) => setFiltroData(e.target.value)} // Atualiza o valor do filtro de data
+          onChange={(e) => setFiltroData(e.target.value)}
           className="p-2 rounded bg-gray-700 text-white w-1/4"
         />
       </div>
@@ -332,8 +407,6 @@ export const ListaPonto = () => {
             ))}
           </tbody>
         </table>
-
-        {/* Navegação de páginas */}
         <div className="flex justify-center items-center mt-4 gap-4">
           <button
             onClick={() =>
@@ -359,13 +432,11 @@ export const ListaPonto = () => {
         </div>
       </div>
 
-      {/* Modal */}
       {modalAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-[#35486E] p-6 rounded-lg w-96">
             <h3 className="text-xl mb-4">Editar Ponto</h3>
             <div className="grid grid-cols-2 gap-4">
-              {/* Nome */}
               <div>
                 <label className="block font-bold mb-1">Nome</label>
                 <input
@@ -380,8 +451,6 @@ export const ListaPonto = () => {
                   className="p-2 border rounded w-full text-black"
                 />
               </div>
-
-              {/* Dia da semana */}
               <div>
                 <label className="block font-bold mb-1">Dia da semana</label>
                 <select
@@ -404,8 +473,6 @@ export const ListaPonto = () => {
                   <option value="Domingo">Domingo</option>
                 </select>
               </div>
-
-              {/* Dia */}
               <div>
                 <label className="block font-bold mb-1">Data</label>
                 <input
@@ -420,8 +487,6 @@ export const ListaPonto = () => {
                   className="p-2 border rounded w-full text-black"
                 />
               </div>
-
-              {/* Ponto de Entrada */}
               <div>
                 <label className="block font-bold mb-1">Ponto Entrada</label>
                 <input
@@ -436,8 +501,6 @@ export const ListaPonto = () => {
                   className="p-2 border rounded w-full text-black"
                 />
               </div>
-
-              {/* Ponto de Almoço */}
               <div>
                 <label className="block font-bold mb-1">Ponto Almoço</label>
                 <input
@@ -452,8 +515,6 @@ export const ListaPonto = () => {
                   className="p-2 border rounded w-full text-black"
                 />
               </div>
-
-              {/* Ponto Volta */}
               <div>
                 <label className="block font-bold mb-1">Ponto Volta</label>
                 <input
@@ -468,8 +529,6 @@ export const ListaPonto = () => {
                   className="p-2 border rounded w-full text-black"
                 />
               </div>
-
-              {/* Ponto Saída */}
               <div>
                 <label className="block font-bold mb-1">Ponto Saída</label>
                 <input
@@ -484,8 +543,6 @@ export const ListaPonto = () => {
                   className="p-2 border rounded w-full text-black"
                 />
               </div>
-
-              {/* Horas Extras */}
               <div>
                 <label className="block font-bold mb-1">Horas Extras</label>
                 <input
@@ -500,8 +557,6 @@ export const ListaPonto = () => {
                   className="p-2 border rounded w-full text-black"
                 />
               </div>
-
-              {/* Atrasos */}
               <div>
                 <label className="block font-bold mb-1">Atrasos</label>
                 <input
@@ -516,8 +571,6 @@ export const ListaPonto = () => {
                   className="p-2 border rounded w-full text-black"
                 />
               </div>
-
-              {/* Falta */}
               <div className="col-span-2">
                 <label className="block font-bold mb-1">Falta</label>
                 <div className="flex gap-4">
@@ -552,7 +605,6 @@ export const ListaPonto = () => {
                 </div>
               </div>
             </div>
-
             <div className="mt-5">
               <label className="block font-bold mb-1">Senha</label>
               <input
@@ -563,8 +615,6 @@ export const ListaPonto = () => {
                 className="p-2 border rounded w-full text-black"
               />
             </div>
-
-            {/* Botões de ação */}
             <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={salvarDados}

@@ -93,6 +93,10 @@ export const AdmUsers = () => {
             email: updatedUser.email,
             cargo: updatedUser.cargo,
             avatar: updatedUser.avatar,
+            primeiroPonto: updatedUser.primeiroPonto,
+            segundoPonto: updatedUser.segundoPonto,
+            terceiroPonto: updatedUser.terceiroPonto,
+            quartoPonto: updatedUser.quartoPonto
           });
 
           setUsers((prev) =>
