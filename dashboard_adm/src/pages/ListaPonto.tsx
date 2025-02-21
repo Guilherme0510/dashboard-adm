@@ -22,7 +22,9 @@ export const ListaPonto = () => {
   const [modalAberto, setModalAberto] = useState(false);
   const [pontoSelecionado, setPontoSelecionado] = useState<any>(null);
   const [termoPesquisa, setTermoPesquisa] = useState("");
-  const [filtroData, setFiltroData] = useState("");
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
+
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
   const admUser = import.meta.env.VITE_ADM_USER;
 
@@ -35,41 +37,49 @@ export const ListaPonto = () => {
   }, []);
   const [senha, setSenha] = useState("");
   const [senhaCorreta, setSenhaCorreta] = useState(false);
-  
+
   useEffect(() => {
     const fetchDados = async () => {
       try {
         const pontosRef = collection(db, "pontos");
         let q = pontosRef;
-        if (filtroData) {
-          const filtroDataFormatada = filtroData.split("-").reverse().join("/"); 
-          q = query(pontosRef, where("dia", "==", filtroDataFormatada)) as any;
+
+        if (dataInicio && dataFim) {
+          const dataInicioFormatada = dataInicio.split("-").reverse().join("/");
+          const dataFimFormatada = dataFim.split("-").reverse().join("/");
+
+          q = query(
+            pontosRef,
+            where("dia", ">=", dataInicioFormatada),
+            where("dia", "<=", dataFimFormatada)
+          ) as any;
         }
+
         const querySnapshot = await getDocs(q);
         const dados = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
+
         setDadosPonto(dados);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
       }
     };
-  
+
     fetchDados();
-  }, [filtroData]); // Esse efeito só busca os pontos e atualiza `dadosPonto`
-  
+  }, [dataInicio, dataFim]);
+
   useEffect(() => {
-    if (dadosPonto.length === 0) return; // Só calcula se houver dados
-  
+    if (dadosPonto.length === 0) return;
+
     const calcularAtrasoEHoraExtra = async () => {
       try {
         const usuariosRef = collection(db, "usuarios");
         const usuariosSnapshot = await getDocs(usuariosRef);
-  
-        // Criar um mapa com os horários dos usuários
+
         const horariosUsuarios = usuariosSnapshot.docs.reduce((acc, doc) => {
-          const nomeUsuario = doc.data().nome; // Usando o nome para corresponder ao ponto
+          const nomeUsuario = doc.data().nome;
           acc[nomeUsuario] = {
             primeiroPonto: doc.data().primeiroPonto?.trim(),
             segundoPonto: doc.data().segundoPonto?.trim(),
@@ -78,91 +88,90 @@ export const ListaPonto = () => {
           };
           return acc;
         }, {} as Record<string, any>);
-  
-  
+
         const novosDadosPonto = dadosPonto.map((ponto) => {
-          const horariosEsperados = horariosUsuarios[ponto.nome]; // Usamos o nome para corresponder
-  
-          if (!horariosEsperados) {
-            console.log(`Usuário não encontrado para o ponto ${ponto.nome}`);
-            return ponto; // Se não encontrar o usuário, mantém os dados inalterados
-          }
-  
-          // Corrigir formato de horário e criar Date corretamente
+          const horariosEsperados = horariosUsuarios[ponto.nome];
+
           const criarData = (hora: string) => {
-            const [horaParte, minutoParte] = hora.split(':').map((parte) => parte.trim());
+            const [horaParte, minutoParte] = hora
+              .split(":")
+              .map((parte) => parte.trim());
             return new Date(`1970-01-01T${horaParte}:${minutoParte}:00`);
           };
-  
-          const entradaReal = ponto.pontoEntrada ? criarData(ponto.pontoEntrada) : null;
-          const almocoSaida = ponto.pontoAlmoco ? criarData(ponto.pontoAlmoco) : null;
-          const almocoVolta = ponto.pontoVolta ? criarData(ponto.pontoVolta) : null;
-          const saidaReal = ponto.pontoSaida ? criarData(ponto.pontoSaida) : null;
-  
-          const entradaEsperada = horariosEsperados.primeiroPonto ? criarData(horariosEsperados.primeiroPonto) : null;
-          const saidaEsperada = horariosEsperados.quartoPonto ? criarData(horariosEsperados.quartoPonto) : null;
-  
-  
+
+          const entradaReal = ponto.pontoEntrada
+            ? criarData(ponto.pontoEntrada)
+            : null;
+          const almocoSaida = ponto.pontoAlmoco
+            ? criarData(ponto.pontoAlmoco)
+            : null;
+          const almocoVolta = ponto.pontoVolta
+            ? criarData(ponto.pontoVolta)
+            : null;
+          const saidaReal = ponto.pontoSaida
+            ? criarData(ponto.pontoSaida)
+            : null;
+
+          const entradaEsperada = horariosEsperados.primeiroPonto
+            ? criarData(horariosEsperados.primeiroPonto)
+            : null;
+          const saidaEsperada = horariosEsperados.quartoPonto
+            ? criarData(horariosEsperados.quartoPonto)
+            : null;
+
           let atraso = 0;
           let horasExtras = 0;
           let horasTrabalhadas = 0;
-  
-          // Calcular atraso se entrou depois do horário esperado
-          if (entradaReal && entradaEsperada && entradaReal > entradaEsperada) {
-            atraso = (entradaReal.getTime() - entradaEsperada.getTime()) / 60000; // Atraso em minutos
-          }
-  
-          // Calcular horas trabalhadas
           if (entradaReal && saidaReal) {
-            // Calcular a diferença entre entrada e saída
-            horasTrabalhadas = (saidaReal.getTime() - entradaReal.getTime()) / 3600000; // Converter ms para horas
-  
-            // Subtrair o tempo de almoço, se houver
+            horasTrabalhadas =
+              (saidaReal.getTime() - entradaReal.getTime()) / 3600000;
+
             if (almocoSaida && almocoVolta) {
-              const tempoAlmoco = (almocoVolta.getTime() - almocoSaida.getTime()) / 3600000;
+              const tempoAlmoco =
+                (almocoVolta.getTime() - almocoSaida.getTime()) / 3600000;
               horasTrabalhadas -= tempoAlmoco;
             }
           }
-  
-          // Calcular a jornada esperada em horas
-          const jornadaEsperada = entradaEsperada && saidaEsperada
-          ? (saidaEsperada.getTime() - entradaEsperada.getTime()) / 3600000
-          : 0;
-        
-        // Corrigir cálculo das horas extras
-        const jornadaEfetiva = jornadaEsperada - (almocoSaida && almocoVolta ? (almocoVolta.getTime() - almocoSaida.getTime()) / 3600000 : 0);
-        
-        if (horasTrabalhadas > jornadaEfetiva) {
-          horasExtras = horasTrabalhadas - jornadaEfetiva;
-        } else {
-          horasExtras = 0;
-        }
-        
-  
+          const jornadaEsperada =
+            entradaEsperada && saidaEsperada
+              ? (saidaEsperada.getTime() - entradaEsperada.getTime()) / 3600000
+              : 0;
+
+          const jornadaEfetiva =
+            jornadaEsperada -
+            (almocoSaida && almocoVolta
+              ? (almocoVolta.getTime() - almocoSaida.getTime()) / 3600000
+              : 0);
+
+          if (horasTrabalhadas > jornadaEfetiva) {
+            horasExtras = horasTrabalhadas - jornadaEfetiva;
+          } else {
+            atraso = jornadaEfetiva - horasTrabalhadas;
+          }
           const formatarHoraMinuto = (horas: number) => {
             const minutos = Math.round(horas * 60);
             const horasFormatadas = Math.floor(minutos / 60);
             const minutosRestantes = minutos % 60;
-            return `${String(horasFormatadas).padStart(2, "0")}:${String(minutosRestantes).padStart(2, "0")}`;
+            return `${String(horasFormatadas).padStart(2, "0")}:${String(
+              minutosRestantes
+            ).padStart(2, "0")}`;
           };
-  
-          // Atualizar os valores para os campos de atraso e horas extras
           return {
             ...ponto,
-            atrasos: formatarHoraMinuto(atraso / 60), // Atraso no formato HH:mm
-            horasExtras: formatarHoraMinuto(horasExtras), // Horas extras no formato HH:mm
+            atrasos: formatarHoraMinuto(atraso),
+            horasExtras: formatarHoraMinuto(horasExtras),
           };
         });
-  
+
         setDadosPonto(novosDadosPonto);
       } catch (error) {
         console.error("Erro ao calcular atraso e hora extra:", error);
       }
     };
-  
+
     calcularAtrasoEHoraExtra();
   }, [dadosPonto]);
-  
+
   const dadosFiltrados = dadosPonto.filter((ponto) =>
     ponto.nome.toLowerCase().includes(termoPesquisa.toLowerCase())
   );
@@ -173,92 +182,130 @@ export const ListaPonto = () => {
 
   const totalPaginas = Math.ceil(dadosFiltrados.length / itemsPorPagina);
 
-const exportarParaXLS = () => {
-  try {
-    const dadosFormatados = dadosFiltrados.map((ponto) => ({
-      Nome: ponto.nome ?? "",
-      Data: ponto.dia ?? "",
-      "Dia da Semana": ponto.diaSemana ?? "",
-      "Ponto Entrada": ponto.pontoEntrada ?? "",
-      "Ponto Almoço": ponto.pontoAlmoco ?? "",
-      "Ponto Volta": ponto.pontoVolta ?? "",
-      "Ponto Saída": ponto.pontoSaida ?? "",
-      "Horas Extras": ponto.horasExtras ?? "",
-      Atrasos: ponto.atrasos ?? "",
-      Falta: ponto.falta ? "Sim" : "Não",
-    }));
+  const exportarParaXLS = () => {
+    try {
+      // Função para formatar valores de tempo como HH:mm
+      const formatarHoraMinuto = (horasMinutos: any) => {
+        if (!horasMinutos) return "00:00"; // Se for nulo ou indefinido, retorna 00:00
+        const [horas, minutos] = horasMinutos.split(":").map(Number);
+        return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(
+          2,
+          "0"
+        )}`;
+      };
 
-    dadosFormatados.push({
-      Nome: "",
-      Data: "",
-      "Dia da Semana": "",
-      "Ponto Entrada": "",
-      "Ponto Almoço": "",
-      "Ponto Volta": "",
-      "Ponto Saída": "",
-      "Horas Extras": "",
-      Atrasos: "",
-      Falta: "",
-    });
+      // Mapeamento dos dados formatados
+      const dadosFormatados = dadosFiltrados.map((ponto) => ({
+        Nome: ponto.nome ?? "",
+        Data: ponto.dia ?? "",
+        "Dia da Semana": ponto.diaSemana ?? "",
+        "Ponto Entrada": ponto.pontoEntrada ?? "",
+        "Ponto Almoço": ponto.pontoAlmoco ?? "",
+        "Ponto Volta": ponto.pontoVolta ?? "",
+        "Ponto Saída": ponto.pontoSaida ?? "",
+        "Horas Extras": formatarHoraMinuto(ponto.horasExtras ?? "00:00"),
+        Atrasos: formatarHoraMinuto(ponto.atrasos ?? "00:00"),
+        Falta: ponto.falta ? "Sim" : "Não",
+      }));
 
-    const resumoMensal = Object.values(
-      dadosFiltrados.reduce((acc, ponto) => {
-        if (!acc[ponto.nome]) {
-          acc[ponto.nome] = {
-            Nome: ponto.nome ?? "",
-            "Total de Dias Trabalhados": 0,
-            "Total de Atrasos": 0,
-            "Total de Horas Extras": 0,
-            "Total de Faltas": 0,
-          };
-        }
+      // Adiciona uma linha em branco
+      dadosFormatados.push({
+        Nome: "",
+        Data: "",
+        "Dia da Semana": "",
+        "Ponto Entrada": "",
+        "Ponto Almoço": "",
+        "Ponto Volta": "",
+        "Ponto Saída": "",
+        "Horas Extras": "",
+        Atrasos: "",
+        Falta: "",
+      });
 
-        acc[ponto.nome]["Total de Dias Trabalhados"] += 1;
-        acc[ponto.nome]["Total de Atrasos"] += ponto.atrasos
-          ? parseFloat(ponto.atrasos) || 0
-          : 0;
-        acc[ponto.nome]["Total de Horas Extras"] += ponto.horasExtras
-          ? parseFloat(ponto.horasExtras) || 0
-          : 0;
-        acc[ponto.nome]["Total de Faltas"] += ponto.falta ? 1 : 0;
+      // Calcula o resumo mensal
+      const resumoMensal = Object.values(
+        dadosFiltrados.reduce((acc, ponto) => {
+          if (!acc[ponto.nome]) {
+            acc[ponto.nome] = {
+              Nome: ponto.nome ?? "",
+              "Total de Dias Trabalhados": 0,
+              "Total de Atrasos (hh:mm)": 0,
+              "Total de Horas Extras (hh:mm)": 0,
+              "Total de Faltas": 0,
+            };
+          }
 
-        return acc;
-      }, {})
-    );
+          acc[ponto.nome]["Total de Dias Trabalhados"] += 1;
 
-    const wsDadosPonto = utils.json_to_sheet(dadosFormatados);
-    const wsResumo = utils.json_to_sheet(resumoMensal);
+          // Converte atraso e hora extra para minutos antes de somar
+          const atrasoMinutos = ponto.atrasos
+            ? parseInt(ponto.atrasos.split(":")[0]) * 60 +
+              parseInt(ponto.atrasos.split(":")[1])
+            : 0;
 
-    wsDadosPonto["!cols"] = [
-      { wch: 20 }, // Nome
-      { wch: 15 }, // Data
-      { wch: 15 }, // Dia da Semana
-      { wch: 15 }, // Ponto Entrada
-      { wch: 15 }, // Ponto Almoço
-      { wch: 15 }, // Ponto Volta
-      { wch: 15 }, // Ponto Saída
-      { wch: 15 }, // Horas Extras
-      { wch: 15 }, // Atrasos
-      { wch: 10 }, // Falta
-    ];
+          const horaExtraMinutos = ponto.horasExtras
+            ? parseInt(ponto.horasExtras.split(":")[0]) * 60 +
+              parseInt(ponto.horasExtras.split(":")[1])
+            : 0;
 
-    wsResumo["!cols"] = [
-      { wch: 20 }, // Nome
-      { wch: 20 }, // Total de Dias Trabalhados
-      { wch: 15 }, // Total de Atrasos
-      { wch: 15 }, // Total de Horas Extras
-      { wch: 15 }, // Total de Faltas
-    ];
+          acc[ponto.nome]["Total de Atrasos (hh:mm)"] += atrasoMinutos;
+          acc[ponto.nome]["Total de Horas Extras (hh:mm)"] += horaExtraMinutos;
+          acc[ponto.nome]["Total de Faltas"] += ponto.falta ? 1 : 0;
 
-    const wb = utils.book_new();
-    utils.book_append_sheet(wb, wsDadosPonto, "Dados Ponto Gerais");
-    utils.book_append_sheet(wb, wsResumo, "Resumo Mensal");
+          return acc;
+        }, {})
+      );
 
-    writeFileXLSX(wb, "relatorio_ponto.xlsx");
-  } catch (error) {
-    console.error("Erro ao exportar para XLSX:", error);
-  }
-};
+      // Converte os totais para formato hh:mm
+      resumoMensal.forEach((resumo: any) => {
+        resumo["Total de Atrasos (hh:mm)"] = formatarHoraMinuto(
+          `${Math.floor(resumo["Total de Atrasos (hh:mm)"] / 60)}:${
+            resumo["Total de Atrasos (hh:mm)"] % 60
+          }`
+        );
+
+        resumo["Total de Horas Extras (hh:mm)"] = formatarHoraMinuto(
+          `${Math.floor(resumo["Total de Horas Extras (hh:mm)"] / 60)}:${
+            resumo["Total de Horas Extras (hh:mm)"] % 60
+          }`
+        );
+      });
+
+      // Criação das planilhas
+      const wsDadosPonto = utils.json_to_sheet(dadosFormatados);
+      const wsResumo = utils.json_to_sheet(resumoMensal);
+
+      wsDadosPonto["!cols"] = [
+        { wch: 20 }, // Nome
+        { wch: 15 }, // Data
+        { wch: 15 }, // Dia da Semana
+        { wch: 15 }, // Ponto Entrada
+        { wch: 15 }, // Ponto Almoço
+        { wch: 15 }, // Ponto Volta
+        { wch: 15 }, // Ponto Saída
+        { wch: 15 }, // Horas Extras
+        { wch: 15 }, // Atrasos
+        { wch: 10 }, // Falta
+      ];
+
+      wsResumo["!cols"] = [
+        { wch: 20 }, // Nome
+        { wch: 20 }, // Total de Dias Trabalhados
+        { wch: 15 }, // Total de Atrasos
+        { wch: 15 }, // Total de Horas Extras
+        { wch: 15 }, // Total de Faltas
+      ];
+
+      // Criar e salvar o arquivo
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, wsDadosPonto, "Dados Ponto Gerais");
+      utils.book_append_sheet(wb, wsResumo, "Resumo Mensal");
+
+      writeFileXLSX(wb, "relatorio_ponto.xlsx");
+    } catch (error) {
+      console.error("Erro ao exportar para XLSX:", error);
+    }
+  };
 
   const abrirModal = (ponto: SetStateAction<null>) => {
     setPontoSelecionado(ponto);
@@ -322,7 +369,7 @@ const exportarParaXLS = () => {
 
   const verificarSenha = (valor: any) => {
     setSenha(valor);
-    setSenhaCorreta(valor === "2025@maps");
+    setSenhaCorreta(valor === "1");
   };
 
   return (
@@ -354,7 +401,6 @@ const exportarParaXLS = () => {
         </div>
       </div>
 
-      {/* Barra de pesquisa e filtro */}
       <div className="flex gap-4 mb-6">
         <input
           type="text"
@@ -365,8 +411,14 @@ const exportarParaXLS = () => {
         />
         <input
           type="date"
-          value={filtroData}
-          onChange={(e) => setFiltroData(e.target.value)}
+          value={dataInicio}
+          onChange={(e) => setDataInicio(e.target.value)}
+          className="p-2 rounded bg-gray-700 text-white w-1/4"
+        />
+        <input
+          type="date"
+          value={dataFim}
+          onChange={(e) => setDataFim(e.target.value)}
           className="p-2 rounded bg-gray-700 text-white w-1/4"
         />
       </div>

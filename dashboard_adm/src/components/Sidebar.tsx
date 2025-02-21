@@ -18,7 +18,8 @@ import { useEffect, useState } from "react";
 
 export const Sidebar = () => {
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
-  const admUser = "9CfoYP8HtPg7nymfGzrn8GE2NOR2";
+  // const admUser = "9CfoYP8HtPg7nymfGzrn8GE2NOR2";
+  const admUser = "mJT4AdiNCuURJsbibAPcNeMid1I3";
 
   useEffect(() => {
     const auth = getAuth();
@@ -28,7 +29,7 @@ export const Sidebar = () => {
     }
   }, []);
 
-  const { nome, avatar, cargo } = useAuth();
+  const { nome, cargo } = useAuth();
   const navigate = useNavigate();
   const handleLogout = async () => {
     try {
@@ -43,18 +44,13 @@ export const Sidebar = () => {
   return (
     <div className="flex flex-col items-center text-white">
       <div className="mt-5 flex flex-col items-center text-center">
-        <img
-          src={avatar || "https://placehold.co/400"}
-          alt="Imagem Fictícia"
-          className="w-[120px] h-[120px] rounded-full"
-        />
         <div className="mt-4">
           <h2 className="text-xl capitalize">{nome.replace('.', ' ')}</h2>
           <h2 className="text-md">{cargo}</h2>
         </div>
       </div>
 
-      <div className="space-y-2 gap-5 flex flex-col">
+      <div className="space-y-2 gap-2 flex flex-col">
         <NavLink
           className={({ isActive }) =>
             `flex items-center mt-5 gap-3 px-3 py-2 transition-all duration-300 ease-in-out transform ${

@@ -21,13 +21,12 @@ interface User {
   id: string;
   nome: string;
   email: string;
-  avatar: string;
   cargo: string;
   disabled: boolean;
   primeiroPonto: string;
   segundoPonto: string;
   terceiroPonto: string;
-  quartoPonto: string
+  quartoPonto: string;
 }
 
 export const AdmUsers = () => {
@@ -92,11 +91,10 @@ export const AdmUsers = () => {
             nome: updatedUser.nome,
             email: updatedUser.email,
             cargo: updatedUser.cargo,
-            avatar: updatedUser.avatar,
             primeiroPonto: updatedUser.primeiroPonto,
             segundoPonto: updatedUser.segundoPonto,
             terceiroPonto: updatedUser.terceiroPonto,
-            quartoPonto: updatedUser.quartoPonto
+            quartoPonto: updatedUser.quartoPonto,
           });
 
           setUsers((prev) =>
@@ -266,7 +264,6 @@ export const AdmUsers = () => {
                   <Tooltip id="icon" content="Ordenar por nome" />
                 </th>
                 <th className="p-2 text-left">Email</th>
-                <th className="p-2 text-left">Avatar</th>
                 <th
                   className="p-2 text-left flex items-center gap-2 cursor-pointer"
                   onClick={() => sortData("cargo")}
@@ -289,16 +286,10 @@ export const AdmUsers = () => {
                       : " border-b"
                   }
                 >
-                  <td className="p-2 capitalize">{user.nome}</td>
-                  <td className="p-2">{user.email}</td>
-                  <td className="p-2">
-                    <img
-                      src={user.avatar}
-                      alt="Avatar"
-                      className="w-12 h-12 object-cover rounded-full"
-                    />
-                  </td>
-                  <td className="p-2 capitalize">{user.cargo}</td>
+                  <td className="p-2 py-5 capitalize">{user.nome}</td>
+                  <td className="p-2 py-5">{user.email}</td>
+
+                  <td className="p-2 py-5 capitalize">{user.cargo}</td>
                   <td className="text-start">
                     <button
                       onClick={() => setSelectedUser(user)}
@@ -377,122 +368,138 @@ export const AdmUsers = () => {
         </div>
       </div>
       {modalEdit && editUserData && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg text-black">
-      {/* Avatar no topo */}
-      <div className="flex justify-center mb-4">
-        <img 
-          src={editUserData.avatar} 
-          alt="Avatar" 
-          className="w-24 h-24 rounded-full object-cover"
-        />
-      </div>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-black">
+            <h2 className="text-xl font-bold mb-4 text-center">
+              Editar Usuário de{" "}
+              <span className="capitalize">
+                {editUserData.nome.replace(".", " ")}
+              </span>
+            </h2>
 
-      <h2 className="text-xl font-bold mb-4 text-center">
-        Editar Usuário de{" "}
-        <span className="capitalize">
-          {editUserData.nome.replace(".", " ")}
-        </span>
-      </h2>
+            {/* Grid de Inputs em 3 por linha */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome
+                </label>
+                <input
+                  type="text"
+                  value={editUserData.nome}
+                  onChange={(e) =>
+                    handleEditInputChange("nome", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editUserData.email}
+                  onChange={(e) =>
+                    handleEditInputChange("email", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cargo
+                </label>
+                <select
+                  value={newCargo}
+                  onChange={(e) => setNewCargo(e.target.value)}
+                  className="border border-gray-300 p-2 rounded w-full mb-4"
+                >
+                  <option value="">{editUserData.cargo}</option>
+                  <option value="adm">Admin</option>
+                  <option value="vendas">Vendas</option>
+                  <option value="monitoria">Monitoria</option>
+                  <option value="cobranca">Cobrança</option>
+                  <option value="financeiro">Financeiro</option>
+                  <option value="marketing">Marketing</option>
+                </select>
+              </div>
+            </div>
 
-      {/* Grid de Inputs em 3 por linha */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-          <input
-            type="text"
-            value={editUserData.nome}
-            onChange={(e) => handleEditInputChange("nome", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            value={editUserData.email}
-            onChange={(e) => handleEditInputChange("email", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
-          <select
-            value={newCargo}
-            onChange={(e) => setNewCargo(e.target.value)}
-            className="border border-gray-300 p-2 rounded w-full mb-4"
-          >
-            <option value="">{editUserData.cargo}</option>
-            <option value="adm">Admin</option>
-            <option value="vendas">Vendas</option>
-            <option value="monitoria">Monitoria</option>
-            <option value="cobranca">Cobrança</option>
-            <option value="financeiro">Financeiro</option>
-            <option value="marketing">Marketing</option>
-          </select>
-        </div>
-      </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Primeiro Ponto
+                </label>
+                <input
+                  type="text"
+                  value={editUserData.primeiroPonto}
+                  onChange={(e) =>
+                    handleEditInputChange("primeiroPonto", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Segundo Ponto
+                </label>
+                <input
+                  type="text"
+                  value={editUserData.segundoPonto}
+                  onChange={(e) =>
+                    handleEditInputChange("segundoPonto", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Terceiro Ponto
+                </label>
+                <input
+                  type="text"
+                  value={editUserData.terceiroPonto}
+                  onChange={(e) =>
+                    handleEditInputChange("terceiroPonto", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quarto Ponto
+                </label>
+                <input
+                  type="text"
+                  value={editUserData.quartoPonto}
+                  onChange={(e) =>
+                    handleEditInputChange("quartoPonto", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Primeiro Ponto</label>
-          <input
-            type="text"
-            value={editUserData.primeiroPonto}
-            onChange={(e) => handleEditInputChange("primeiroPonto", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+            {/* Botões de ação */}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCloseModalEdit}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Segundo Ponto</label>
-          <input
-            type="text"
-            value={editUserData.segundoPonto}
-            onChange={(e) => handleEditInputChange("segundoPonto", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Terceiro Ponto</label>
-          <input
-            type="text"
-            value={editUserData.terceiroPonto}
-            onChange={(e) => handleEditInputChange("terceiroPonto", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Quarto Ponto</label>
-          <input
-            type="text"
-            value={editUserData.quartoPonto}
-            onChange={(e) => handleEditInputChange("quartoPonto", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-
-      {/* Botões de ação */}
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={handleCloseModalEdit}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleSaveEdit}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          Salvar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
 
       <ToastContainer />
     </div>
