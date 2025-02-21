@@ -44,6 +44,11 @@ export const Sidebar = () => {
   return (
     <div className="flex flex-col items-center text-white">
       <div className="mt-5 flex flex-col items-center text-center">
+        <img
+          src='/kaio.png'
+          alt="Imagem Fictícia"
+          className="w-[120px] h-[150px] rounded-full"
+        />
         <div className="mt-4">
           <h2 className="text-xl capitalize">{nome.replace('.', ' ')}</h2>
           <h2 className="text-md">{cargo}</h2>
