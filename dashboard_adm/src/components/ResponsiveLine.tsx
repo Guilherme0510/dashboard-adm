@@ -17,8 +17,8 @@ interface VendaPorMes {
 }
 
 interface ResponsiveLineChartProps {
-  width?: number; // Tamanho da largura
-  height?: number; // Tamanho da altura
+  width?: number; 
+  height?: number; 
 }
 
 const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, setDoc, doc, getDocs } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
+import { toast, ToastContainer } from "react-toastify";
 
 export const Faltas = () => {
   type FormData = {
@@ -94,7 +95,7 @@ export const Faltas = () => {
   const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSenha(value);
-    setIsSenhaValida(value === "068543");
+    setIsSenhaValida(value === "1");
   };
 
   const handleSave = async () => {
@@ -112,20 +113,20 @@ export const Faltas = () => {
         ...formData,
         dia: formData.dia, // Usar a data no formato dd/mm/aaaa
       });
-
-      alert("Dados salvos com sucesso!");
       setFormData({
         falta: false,
-        nome: "",
+        nome: '',
         dia: "",
         diaSemana: "",
-        pontoEntrada: "",
+        pontoEntrada: "00:00",
         pontoAlmoco: "00:00",
         pontoVolta: "00:00",
         pontoSaida: "00:00",
         atrasos: "00:00",
         horasExtras: "00:00",
       });
+
+      toast.success(`Dados salvos de ${formData.nome} com sucessos!`)
       setSenha("");
       setIsSenhaValida(false);
     } catch (error) {
@@ -221,6 +222,7 @@ export const Faltas = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
