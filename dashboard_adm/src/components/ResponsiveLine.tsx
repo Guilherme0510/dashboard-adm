@@ -17,8 +17,8 @@ interface VendaPorMes {
 }
 
 interface ResponsiveLineChartProps {
-  width?: number; 
-  height?: number; 
+  width?: number;
+  height?: number;
 }
 
 const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
@@ -58,8 +58,6 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
           };
         }
       );
-
-      // Ordena as vendas por mês
       const vendasOrdenadas = _.orderBy(vendasPorMes, ["x"], ["asc"]);
 
       setDados([{ id: "Vendas", data: vendasOrdenadas }]);
@@ -77,26 +75,26 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
         yScale={{
           type: "linear",
           min: "auto",
-          max: "auto",
+          max: 500,
           stacked: true,
         }}
         axisTop={null}
         axisRight={null}
         axisBottom={{
-          tickSize: 5,
+          tickSize: 10,
           tickPadding: 5,
           tickRotation: 0,
           legend: "Meses",
-          legendOffset: 36,
+          legendOffset: 45,
         }}
         axisLeft={{
-          tickSize: 5,
+          tickSize: 10,
           tickPadding: 5,
           tickRotation: 0,
           legend: "Vendas",
-          legendOffset: -40,
+          legendOffset: -50,
         }}
-        pointSize={8}
+        pointSize={10}
         pointColor={{ theme: "background" }}
         pointBorderWidth={2}
         pointBorderColor={{ from: "serieColor" }}
@@ -104,7 +102,6 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
         pointLabelYOffset={-12}
         enableTouchCrosshair={true}
         useMesh={true}
-        
         colors={["#ff8c00"]}
         theme={{
           axis: {
@@ -119,6 +116,7 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
         legends={[
           {
             anchor: "bottom-right",
+            itemTextColor: "#fff",
             direction: "column",
             justify: false,
             translateX: 100,
@@ -150,8 +148,8 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
               borderRadius: "5px",
             }}
           >
-                        <strong>{point.data.xFormatted}</strong>
-                        <br />
+            <strong>{point.data.xFormatted}</strong>
+            <br />
             Vendas: {point.data.yFormatted}
           </div>
         )}

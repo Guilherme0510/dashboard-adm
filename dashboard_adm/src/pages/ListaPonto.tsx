@@ -42,17 +42,18 @@ export const ListaPonto = () => {
     const fetchDados = async () => {
       try {
         const pontosRef = collection(db, "pontos");
-        let q = pontosRef;
+        let q = query(pontosRef);
 
         if (dataInicio && dataFim) {
-          const dataInicioFormatada = dataInicio.split("-").reverse().join("/");
-          const dataFimFormatada = dataFim.split("-").reverse().join("/");
+          // Converte as datas de entrada para o formato "DD/MM/YYYY"
+          const dataInicioFormatada = formatarData(dataInicio);
+          const dataFimFormatada = formatarData(dataFim);
 
           q = query(
             pontosRef,
             where("dia", ">=", dataInicioFormatada),
             where("dia", "<=", dataFimFormatada)
-          ) as any;
+          );
         }
 
         const querySnapshot = await getDocs(q);
@@ -654,6 +655,21 @@ export const ListaPonto = () => {
                     />
                     Não
                   </label>
+                </div>
+                <div className="mt-2">
+                  <label className="block font-bold mb-1">Atestado</label>
+                  <input
+                    type="text"
+                    value={pontoSelecionado?.atestado || ""}
+                    onChange={(e) =>
+                      setPontoSelecionado({
+                        ...pontoSelecionado,
+                        atestado: e.target.value,
+                      })
+                    }
+                    placeholder="Insira o link do atestado"
+                    className="p-2 border rounded w-full text-black"
+                  />
                 </div>
               </div>
             </div>

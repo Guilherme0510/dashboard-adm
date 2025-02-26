@@ -15,6 +15,7 @@ export const Faltas = () => {
     pontoSaida: string;
     atrasos: string;
     horasExtras: string;
+    atestado: string
   };
 
   const [formData, setFormData] = useState<FormData>({
@@ -28,6 +29,7 @@ export const Faltas = () => {
     pontoSaida: "",
     atrasos: "",
     horasExtras: "",
+    atestado: ""
   });
 
   const [usuarios, setUsuarios] = useState<string[]>([]);
@@ -67,7 +69,7 @@ export const Faltas = () => {
   
       setFormData((prev) => ({
         ...prev,
-        [name as keyof FormData]: formattedValue, // Corrigido aqui
+        [name as keyof FormData]: formattedValue,
       }));
     } else if (name === "dia") {
       const [year, month, day] = value.split("-");
@@ -75,21 +77,28 @@ export const Faltas = () => {
         const formattedDate = `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
         setFormData((prev) => ({
           ...prev,
-          [name as keyof FormData]: formattedDate, // Corrigido aqui
+          [name as keyof FormData]: formattedDate,
         }));
       }
     } else if (name === "falta") {
       setFormData((prev) => ({
         ...prev,
-        [name as keyof FormData]: value === "sim", // Corrigido aqui
+        [name as keyof FormData]: value === "sim",
+      }));
+    } else if (name === "atestado") {
+      // Caso o campo "atestado" seja um link (URL), apenas armazene o valor no estado
+      setFormData((prev) => ({
+        ...prev,
+        [name as keyof FormData]: value, // Aqui você armazena o link diretamente
       }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name as keyof FormData]: type === "checkbox" ? checked : value, // Corrigido aqui
+        [name as keyof FormData]: type === "checkbox" ? checked : value,
       }));
     }
   };
+  
   
 
   const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,6 +133,7 @@ export const Faltas = () => {
         pontoSaida: "00:00",
         atrasos: "00:00",
         horasExtras: "00:00",
+        atestado: "",
       });
 
       toast.success(`Dados salvos de ${formData.nome} com sucessos!`)
@@ -136,7 +146,7 @@ export const Faltas = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col text-white p-6">
+    <div className=" flex flex-col text-white p-6">
       <div className="mb-8">
         <h1 className="text-4xl mb-2">Ponto Maps</h1>
         <p>Pontos e Faltas Manuais</p>
@@ -211,6 +221,16 @@ export const Faltas = () => {
                   Não
                 </label>
               </div>
+            </label>
+            <label className="flex flex-col">
+              <span>Atestado:</span>
+              <input 
+                type="text" 
+                name="atestado" 
+                value={formData.atestado}
+                onChange={handleInputChange} 
+                className="p-2 rounded bg-gray-200 text-black"
+              />
             </label>
             <label className="flex flex-col col-span-2">
               <span>Senha:</span>
