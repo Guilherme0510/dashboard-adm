@@ -6,7 +6,7 @@ import { userRouter } from './routes/userRoutes.js';
 const app = express();
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "https://dashboard-adm-front-end.vercel.app/",
+    origin: process.env.FRONTEND_URL || "https://dashboard-adm-front-end.vercel.app",
     // origin: process.env.FRONTEND_URL || "http://localhost:3000",
   }));
 app.use(express.json());
