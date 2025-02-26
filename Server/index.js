@@ -7,7 +7,7 @@ const app = express();
 
 app.use(cors({
     origin: process.env.FRONTEND_URL || "https://dashboard-adm-front-end.vercel.app",
-    // origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    // origin: process.env.FRONTEND_URL || "http://localhost:5173",
   }));
 app.use(express.json());
 
