@@ -260,7 +260,7 @@ export const ListaPonto = () => {
       });
 
       // Calcula o resumo mensal
-      const resumoMensal: ResumoMensal[] = Object.values(
+      const resumoMensal = Object.values(
         dadosFiltrados.reduce((acc, ponto) => {
           if (!acc[ponto.nome]) {
             acc[ponto.nome] = {
@@ -271,47 +271,41 @@ export const ListaPonto = () => {
               "Total de Faltas": 0,
             };
           }
-
+  
           acc[ponto.nome]["Total de Dias Trabalhados"] += 1;
-
+  
           // Converte atraso e hora extra para minutos antes de somar
           const atrasoMinutos = ponto.atrasos
-            ? parseInt(ponto.atrasos.split(":")[0]) * 60 +
-              parseInt(ponto.atrasos.split(":")[1])
+            ? parseInt(ponto.atrasos.split(":")[0]) * 60 + parseInt(ponto.atrasos.split(":")[1])
             : 0;
-
+  
           const horaExtraMinutos = ponto.horasExtras
-            ? parseInt(ponto.horasExtras.split(":")[0]) * 60 +
-              parseInt(ponto.horasExtras.split(":")[1])
+            ? parseInt(ponto.horasExtras.split(":")[0]) * 60 + parseInt(ponto.horasExtras.split(":")[1])
             : 0;
-
+  
           acc[ponto.nome]["Total de Atrasos (hh:mm)"] += atrasoMinutos;
           acc[ponto.nome]["Total de Horas Extras (hh:mm)"] += horaExtraMinutos;
           acc[ponto.nome]["Total de Faltas"] += ponto.falta ? 1 : 0;
-
+  
           return acc;
         }, {} as Record<string, ResumoMensal>)
       );
+  
 
       // Converte os totais para formato hh:mm
-      resumoMensal.forEach((resumo) => {
-        resumo["Total de Atrasos (hh:mm)"] = parseInt(
-          formatarHoraMinuto(
-            `${Math.floor(resumo["Total de Atrasos (hh:mm)"] / 60)}:${
-              resumo["Total de Atrasos (hh:mm)"] % 60
-            }`
-          ).replace(":", "")
+      resumoMensal.forEach((resumo: any) => {
+        resumo["Total de Atrasos (hh:mm)"] = formatarHoraMinuto(
+          `${Math.floor(resumo["Total de Atrasos (hh:mm)"] / 60)}:${
+            resumo["Total de Atrasos (hh:mm)"] % 60
+          }`
         );
-
-        resumo["Total de Horas Extras (hh:mm)"] = parseInt(
-          formatarHoraMinuto(
-            `${Math.floor(resumo["Total de Horas Extras (hh:mm)"] / 60)}:${
-              resumo["Total de Horas Extras (hh:mm)"] % 60
-            }`
-          ).replace(":", "")
+  
+        resumo["Total de Horas Extras (hh:mm)"] = formatarHoraMinuto(
+          `${Math.floor(resumo["Total de Horas Extras (hh:mm)"] / 60)}:${
+            resumo["Total de Horas Extras (hh:mm)"] % 60
+          }`
         );
       });
-
       // Criação das planilhas
       const wsDadosPonto = utils.json_to_sheet(dadosFormatados);
       const wsResumo = utils.json_to_sheet(resumoMensal);
