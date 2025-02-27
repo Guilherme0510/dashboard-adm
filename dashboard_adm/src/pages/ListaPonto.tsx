@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SetStateAction, useEffect, useState } from "react";
 import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
-import { utils, writeFileXLSX } from "xlsx";
+import { utils } from "xlsx";
 import {
   collection,
   doc,
@@ -14,6 +14,41 @@ import { db } from "../config/firebaseConfig";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
+import { writeFile } from "xlsx-js-style";
+
+interface Ponto {
+  nome: string;
+  dia: string;
+  diaSemana: string;
+  pontoEntrada: string;
+  pontoAlmoco: string;
+  pontoVolta: string;
+  pontoSaida: string;
+  horasExtras: string;
+  atrasos: string;
+  falta: boolean;
+}
+
+interface DadosFormatados {
+  Nome: string;
+  Data: string;
+  "Dia da Semana": string;
+  "Ponto Entrada": string;
+  "Ponto Almoço": string;
+  "Ponto Volta": string;
+  "Ponto Saída": string;
+  "Horas Extras": string;
+  Atrasos: string;
+  Falta: string;
+}
+
+interface ResumoMensal {
+  Nome: string;
+  "Total de Dias Trabalhados": number;
+  "Total de Atrasos (hh:mm)": number;
+  "Total de Horas Extras (hh:mm)": number;
+  "Total de Faltas": number;
+}
 
 export const ListaPonto = () => {
   const [dadosPonto, setDadosPonto] = useState<any[]>([]);
@@ -45,7 +80,7 @@ export const ListaPonto = () => {
         let q = query(pontosRef);
 
         if (dataInicio && dataFim) {
-          // Converte as datas de entrada para o formato "DD/MM/YYYY"
+          // Converte as datas de entrada para o formato "yyyy-mm-dd"
           const dataInicioFormatada = formatarData(dataInicio);
           const dataFimFormatada = formatarData(dataFim);
 
@@ -183,11 +218,10 @@ export const ListaPonto = () => {
 
   const totalPaginas = Math.ceil(dadosFiltrados.length / itemsPorPagina);
 
-  const exportarParaXLS = () => {
+  const exportarParaXLS = (dadosFiltrados: Ponto[]) => {
     try {
-      // Função para formatar valores de tempo como HH:mm
-      const formatarHoraMinuto = (horasMinutos: any) => {
-        if (!horasMinutos) return "00:00"; // Se for nulo ou indefinido, retorna 00:00
+      const formatarHoraMinuto = (horasMinutos: string): string => {
+        if (!horasMinutos) return "00:00";
         const [horas, minutos] = horasMinutos.split(":").map(Number);
         return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(
           2,
@@ -196,18 +230,20 @@ export const ListaPonto = () => {
       };
 
       // Mapeamento dos dados formatados
-      const dadosFormatados = dadosFiltrados.map((ponto) => ({
-        Nome: ponto.nome ?? "",
-        Data: ponto.dia ?? "",
-        "Dia da Semana": ponto.diaSemana ?? "",
-        "Ponto Entrada": ponto.pontoEntrada ?? "",
-        "Ponto Almoço": ponto.pontoAlmoco ?? "",
-        "Ponto Volta": ponto.pontoVolta ?? "",
-        "Ponto Saída": ponto.pontoSaida ?? "",
-        "Horas Extras": formatarHoraMinuto(ponto.horasExtras ?? "00:00"),
-        Atrasos: formatarHoraMinuto(ponto.atrasos ?? "00:00"),
-        Falta: ponto.falta ? "Sim" : "Não",
-      }));
+      const dadosFormatados: DadosFormatados[] = dadosFiltrados.map(
+        (ponto) => ({
+          Nome: ponto.nome ?? "",
+          Data: ponto.dia ?? "",
+          "Dia da Semana": ponto.diaSemana ?? "",
+          "Ponto Entrada": ponto.pontoEntrada ?? "",
+          "Ponto Almoço": ponto.pontoAlmoco ?? "",
+          "Ponto Volta": ponto.pontoVolta ?? "",
+          "Ponto Saída": ponto.pontoSaida ?? "",
+          "Horas Extras": formatarHoraMinuto(ponto.horasExtras ?? "00:00"),
+          Atrasos: formatarHoraMinuto(ponto.atrasos ?? "00:00"),
+          Falta: ponto.falta ? "Sim" : "Não",
+        })
+      );
 
       // Adiciona uma linha em branco
       dadosFormatados.push({
@@ -224,7 +260,7 @@ export const ListaPonto = () => {
       });
 
       // Calcula o resumo mensal
-      const resumoMensal = Object.values(
+      const resumoMensal: ResumoMensal[] = Object.values(
         dadosFiltrados.reduce((acc, ponto) => {
           if (!acc[ponto.nome]) {
             acc[ponto.nome] = {
@@ -254,21 +290,25 @@ export const ListaPonto = () => {
           acc[ponto.nome]["Total de Faltas"] += ponto.falta ? 1 : 0;
 
           return acc;
-        }, {})
+        }, {} as Record<string, ResumoMensal>)
       );
 
       // Converte os totais para formato hh:mm
-      resumoMensal.forEach((resumo: any) => {
-        resumo["Total de Atrasos (hh:mm)"] = formatarHoraMinuto(
-          `${Math.floor(resumo["Total de Atrasos (hh:mm)"] / 60)}:${
-            resumo["Total de Atrasos (hh:mm)"] % 60
-          }`
+      resumoMensal.forEach((resumo) => {
+        resumo["Total de Atrasos (hh:mm)"] = parseInt(
+          formatarHoraMinuto(
+            `${Math.floor(resumo["Total de Atrasos (hh:mm)"] / 60)}:${
+              resumo["Total de Atrasos (hh:mm)"] % 60
+            }`
+          ).replace(":", "")
         );
 
-        resumo["Total de Horas Extras (hh:mm)"] = formatarHoraMinuto(
-          `${Math.floor(resumo["Total de Horas Extras (hh:mm)"] / 60)}:${
-            resumo["Total de Horas Extras (hh:mm)"] % 60
-          }`
+        resumo["Total de Horas Extras (hh:mm)"] = parseInt(
+          formatarHoraMinuto(
+            `${Math.floor(resumo["Total de Horas Extras (hh:mm)"] / 60)}:${
+              resumo["Total de Horas Extras (hh:mm)"] % 60
+            }`
+          ).replace(":", "")
         );
       });
 
@@ -276,6 +316,84 @@ export const ListaPonto = () => {
       const wsDadosPonto = utils.json_to_sheet(dadosFormatados);
       const wsResumo = utils.json_to_sheet(resumoMensal);
 
+      // Definir o estilo do cabeçalho
+      const headerStyle = {
+        fill: {
+          patternType: "solid",
+          fgColor: { rgb: "FFFF00" }, // Cor de fundo amarela
+        },
+        font: {
+          bold: true,
+          color: { rgb: "0000FF" }, // Cor do texto azul
+        },
+        alignment: {
+          horizontal: "center",
+        },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } },
+        },
+      };
+
+      // Definir o estilo das células (bordas)
+      const cellStyle = {
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } },
+        },
+      };
+
+      // Aplicar o estilo ao cabeçalho
+      const headerRange = utils.decode_range(wsDadosPonto["!ref"]!);
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = utils.encode_cell({ r: 0, c: col });
+        if (!wsDadosPonto[cellAddress]) wsDadosPonto[cellAddress] = {};
+        wsDadosPonto[cellAddress].s = headerStyle;
+      }
+
+      // Aplicar bordas a todas as células
+      const dataRange = utils.decode_range(wsDadosPonto["!ref"]!);
+      for (let row = dataRange.s.r; row <= dataRange.e.r; row++) {
+        for (let col = dataRange.s.c; col <= dataRange.e.c; col++) {
+          const cellAddress = utils.encode_cell({ r: row, c: col });
+          if (!wsDadosPonto[cellAddress]) wsDadosPonto[cellAddress] = {};
+          wsDadosPonto[cellAddress].s = {
+            ...wsDadosPonto[cellAddress].s,
+            ...cellStyle,
+          };
+        }
+      }
+
+      // Aplicar o estilo ao cabeçalho do resumo mensal
+      const headerRangeResumo = utils.decode_range(wsResumo["!ref"]!);
+      for (
+        let col = headerRangeResumo.s.c;
+        col <= headerRangeResumo.e.c;
+        col++
+      ) {
+        const cellAddress = utils.encode_cell({ r: 0, c: col });
+        if (!wsResumo[cellAddress]) wsResumo[cellAddress] = {};
+        wsResumo[cellAddress].s = headerStyle;
+      }
+
+      // Aplicar bordas a todas as células do resumo mensal
+      const dataRangeResumo = utils.decode_range(wsResumo["!ref"]!);
+      for (let row = dataRangeResumo.s.r; row <= dataRangeResumo.e.r; row++) {
+        for (let col = dataRangeResumo.s.c; col <= dataRangeResumo.e.c; col++) {
+          const cellAddress = utils.encode_cell({ r: row, c: col });
+          if (!wsResumo[cellAddress]) wsResumo[cellAddress] = {};
+          wsResumo[cellAddress].s = {
+            ...wsResumo[cellAddress].s,
+            ...cellStyle,
+          };
+        }
+      }
+
+      // Define a largura das colunas
       wsDadosPonto["!cols"] = [
         { wch: 20 }, // Nome
         { wch: 15 }, // Data
@@ -297,12 +415,16 @@ export const ListaPonto = () => {
         { wch: 15 }, // Total de Faltas
       ];
 
+      // Adiciona o filtro automático
+      wsDadosPonto["!autofilter"] = { ref: "A1:J1" }; // Define a faixa de filtro na planilha de dados
+      wsResumo["!autofilter"] = { ref: "A1:E1" }; // Define a faixa de filtro na planilha de resumo
+
       // Criar e salvar o arquivo
       const wb = utils.book_new();
       utils.book_append_sheet(wb, wsDadosPonto, "Dados Ponto Gerais");
       utils.book_append_sheet(wb, wsResumo, "Resumo Mensal");
 
-      writeFileXLSX(wb, "relatorio_ponto.xlsx");
+      writeFile(wb, "relatorio_ponto.xlsx");
     } catch (error) {
       console.error("Erro ao exportar para XLSX:", error);
     }
@@ -364,8 +486,8 @@ export const ListaPonto = () => {
     }
   };
   const formatarData = (data: string) => {
-    const [ano, mes, dia] = data.split("-");
-    return `${dia}/${mes}/${ano}`;
+    const [ano, mes, dia] = data.split("/");
+    return `${dia}-${mes}-${ano}`;
   };
 
   const verificarSenha = (valor: any) => {
@@ -394,7 +516,7 @@ export const ListaPonto = () => {
             </Link>
           )}
           <button
-            onClick={exportarParaXLS}
+            onClick={() => exportarParaXLS(dadosFiltrados)}
             className="bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
           >
             Download XLS
