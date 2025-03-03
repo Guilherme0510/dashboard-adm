@@ -15,6 +15,7 @@ import {
   getDocs,
   query,
   setDoc,
+  Timestamp,
   where,
 } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
@@ -41,10 +42,6 @@ export const Ponto = () => {
   const [intervaloCliques, setIntervaloCliques] = useState<string>("");
   const [horasExtras, setHorasExtras] = useState<string>("");
   const [atrasos, setAtrasos] = useState<string>("");
-  // const [pontoEntrada, setPontoEntrada] = useState<string>("");
-  // const [pontoAlmoco, setPontoAlmoco] = useState<string>("");
-  // const [pontoVolta, setPontoVolta] = useState<string>("");
-  // const [pontoSaida, setPontoSaida] = useState<string>("");
   const [, setDadosDoDia] = useState<any | null>(null);
   const [botaoDesabilitado, setBotaoDesabilitado] = useState(false);
 
@@ -168,16 +165,17 @@ export const Ponto = () => {
       ];
       const diaSemana = diasDaSemana[dataSelecionada.getDay()];
 
-      const dataFormatada = dataSelecionada.toISOString().split("T")[0];
+      const dataFormatada = Timestamp.fromDate(dataSelecionada);
+      const dataId = dataSelecionada.toISOString().split("T")[0];
       const nomeUsuario = nome.replace(/\s+/g, "_");
-      const documentoId = `${nomeUsuario}-${dataFormatada}`;
+      const documentoId = `${nomeUsuario}-${dataId}`;
       const pontoRef = doc(db, "pontos", documentoId);
 
       const docSnapshot = await getDoc(pontoRef);
       const dadosAtuais = docSnapshot.exists() ? docSnapshot.data() : {};
 
       const pontoData = {
-        dia: dataSelecionada.toLocaleDateString(),
+        dia: dataFormatada,
         diaSemana: diaSemana,
         nome: nome,
         pontoEntrada:
@@ -341,8 +339,6 @@ export const Ponto = () => {
     const carregarFaltas = async () => {
       try {
         const nomeUsuario = nome; // Nome do usuário logado
-
-        // Consulta para buscar os documentos que têm 'falta' igual a true
         const faltasQuery = query(
           collection(db, "pontos"),
           where("nome", "==", nomeUsuario), // Verifica pelo nome do usuário logado
@@ -351,8 +347,7 @@ export const Ponto = () => {
 
         const querySnapshot = await getDocs(faltasQuery);
 
-        // Contabiliza as faltas
-        setFaltas(querySnapshot.size); // Número de documentos encontrados com falta = true
+        setFaltas(querySnapshot.size);
       } catch (error) {
         console.error("Erro ao carregar as faltas:", error);
       }

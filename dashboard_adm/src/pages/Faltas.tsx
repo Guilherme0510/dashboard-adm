@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { collection, setDoc, doc, getDocs } from "firebase/firestore";
+import {
+  collection,
+  setDoc,
+  doc,
+  getDocs,
+  Timestamp,
+} from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -15,7 +21,7 @@ export const Faltas = () => {
     pontoSaida: string;
     atrasos: string;
     horasExtras: string;
-    atestado: string
+    atestado: string;
   };
 
   const [formData, setFormData] = useState<FormData>({
@@ -29,11 +35,11 @@ export const Faltas = () => {
     pontoSaida: "",
     atrasos: "",
     horasExtras: "",
-    atestado: ""
+    atestado: "",
   });
 
   const [usuarios, setUsuarios] = useState<string[]>([]);
-  const [senha, setSenha] = useState<string>(""); 
+  const [senha, setSenha] = useState<string>("");
   const [isSenhaValida, setIsSenhaValida] = useState<boolean>(false);
 
   useEffect(() => {
@@ -49,24 +55,35 @@ export const Faltas = () => {
     fetchUsuarios();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
-  
-    if (name === "pontoEntrada" || name === "pontoAlmoco" || name === "pontoVolta" || name === "pontoSaida" || name === "atrasos" || name === "horasExtras") {
+
+    if (
+      name === "pontoEntrada" ||
+      name === "pontoAlmoco" ||
+      name === "pontoVolta" ||
+      name === "pontoSaida" ||
+      name === "atrasos" ||
+      name === "horasExtras"
+    ) {
       let formattedValue = value.replace(/[^0-9]/g, "");
-  
+
       if (formattedValue.length > 2 && formattedValue.length <= 4) {
-        formattedValue = `${formattedValue.slice(0, 2)}:${formattedValue.slice(2)}`;
+        formattedValue = `${formattedValue.slice(0, 2)}:${formattedValue.slice(
+          2
+        )}`;
       }
-  
+
       if (formattedValue.length > 5) {
         formattedValue = formattedValue.slice(0, 5);
       }
-  
+
       if (formattedValue.replace(":", "").length > 4) {
         return;
       }
-  
+
       setFormData((prev) => ({
         ...prev,
         [name as keyof FormData]: formattedValue,
@@ -74,7 +91,9 @@ export const Faltas = () => {
     } else if (name === "dia") {
       const [year, month, day] = value.split("-");
       if (year && month && day) {
-        const formattedDate = `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+        const formattedDate = `${String(day).padStart(2, "0")}/${String(
+          month
+        ).padStart(2, "0")}/${year}`;
         setFormData((prev) => ({
           ...prev,
           [name as keyof FormData]: formattedDate,
@@ -98,8 +117,6 @@ export const Faltas = () => {
       }));
     }
   };
-  
-  
 
   const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -112,19 +129,30 @@ export const Faltas = () => {
       alert("Por favor, preencha o nome e a data.");
       return;
     }
-
+  
     try {
+      // Converte a data de formato dd/mm/yyyy para yyyy-mm-dd
       const [day, month, year] = formData.dia.split("/");
       const formattedDiaBanco = `${year}-${month}-${day}`;
+  
+      // Cria uma data no fuso horário de Brasília (GMT-3)
+      const diaLocal = new Date(`${formattedDiaBanco}T00:00:00-03:00`);
+  
+      // Converte para Timestamp do Firebase
+      const diaTimestamp = Timestamp.fromDate(diaLocal);
+  
       const docId = `${formData.nome}-${formattedDiaBanco}`;
-
+  
+      // Salva no Firestore com o Timestamp
       await setDoc(doc(collection(db, "pontos"), docId), {
         ...formData,
-        dia: formData.dia, // Usar a data no formato dd/mm/aaaa
+        dia: diaTimestamp, // Salva como Timestamp do Firebase
       });
+  
+      // Limpar os campos após o sucesso
       setFormData({
         falta: false,
-        nome: '',
+        nome: "",
         dia: "",
         diaSemana: "",
         pontoEntrada: "00:00",
@@ -135,8 +163,8 @@ export const Faltas = () => {
         horasExtras: "00:00",
         atestado: "",
       });
-
-      toast.success(`Dados salvos de ${formData.nome} com sucessos!`)
+  
+      toast.success(`Dados salvos de ${formData.nome} com sucesso!`);
       setSenha("");
       setIsSenhaValida(false);
     } catch (error) {
@@ -144,6 +172,7 @@ export const Faltas = () => {
       alert("Erro ao salvar os dados. Tente novamente.");
     }
   };
+  
 
   return (
     <div className=" flex flex-col text-white p-6">
@@ -157,26 +186,38 @@ export const Faltas = () => {
           <div className="grid grid-cols-2 gap-4 w-full">
             <label className="flex flex-col col-span-2">
               <span>Nome:</span>
-              <select name="nome" value={formData.nome} onChange={handleInputChange} className="p-2 rounded bg-gray-200 text-black">
+              <select
+                name="nome"
+                value={formData.nome}
+                onChange={handleInputChange}
+                className="p-2 rounded bg-gray-200 text-black"
+              >
                 <option value="">Selecione um nome</option>
                 {usuarios.map((usuario, index) => (
-                  <option key={index} value={usuario}>{usuario}</option>
+                  <option key={index} value={usuario}>
+                    {usuario}
+                  </option>
                 ))}
               </select>
             </label>
             <label className="flex flex-col">
               <span>Data:</span>
-              <input 
-                type="date" 
-                name="dia" 
-                value={formData.dia.split("/").reverse().join("-")}  // Reverte para o formato ISO (yyyy-mm-dd)
-                onChange={handleInputChange} 
+              <input
+                type="date"
+                name="dia"
+                value={formData.dia.split("/").reverse().join("-")}
+                onChange={handleInputChange}
                 className="p-2 rounded bg-gray-200 text-black"
               />
             </label>
             <label className="flex flex-col">
               <span>Dia da semana:</span>
-              <select name="diaSemana" value={formData.diaSemana} onChange={handleInputChange} className="p-2 rounded bg-gray-200 text-black">
+              <select
+                name="diaSemana"
+                value={formData.diaSemana}
+                onChange={handleInputChange}
+                className="p-2 rounded bg-gray-200 text-black"
+              >
                 <option value="">Selecione o dia</option>
                 <option value="Segunda-feira">Segunda</option>
                 <option value="Terca-feira">Terça</option>
@@ -186,37 +227,45 @@ export const Faltas = () => {
                 <option value="Sabado">Sábado</option>
               </select>
             </label>
-            {[{ label: "Ponto de Entrada", name: "pontoEntrada" },
+            {[
+              { label: "Ponto de Entrada", name: "pontoEntrada" },
               { label: "Ponto de Almoço", name: "pontoAlmoco" },
               { label: "Ponto de Volta", name: "pontoVolta" },
               { label: "Ponto de Saída", name: "pontoSaida" },
               { label: "Horas Extras", name: "horasExtras" },
-              { label: "Atraso", name: "atrasos" }].map(({ label, name }) => (
-                <label key={name} className="flex flex-col">
-                  <span>{label}:</span>
-                  <input type="text" name={name}  value={String(formData[name as keyof FormData])}  onChange={handleInputChange} className="p-2 rounded bg-gray-200 text-black" />
-                </label>
+              { label: "Atraso", name: "atrasos" },
+            ].map(({ label, name }) => (
+              <label key={name} className="flex flex-col">
+                <span>{label}:</span>
+                <input
+                  type="text"
+                  name={name}
+                  value={String(formData[name as keyof FormData])}
+                  onChange={handleInputChange}
+                  className="p-2 rounded bg-gray-200 text-black"
+                />
+              </label>
             ))}
             <label className="flex flex-col col-span-2">
               <span>Falta:</span>
               <div className="flex gap-4">
                 <label>
-                  <input 
-                    type="radio" 
-                    name="falta" 
-                    value="sim" 
-                    checked={formData.falta === true} 
-                    onChange={handleInputChange} 
+                  <input
+                    type="radio"
+                    name="falta"
+                    value="sim"
+                    checked={formData.falta === true}
+                    onChange={handleInputChange}
                   />
                   Sim
                 </label>
                 <label>
-                  <input 
-                    type="radio" 
-                    name="falta" 
-                    value="nao" 
-                    checked={formData.falta === false} 
-                    onChange={handleInputChange} 
+                  <input
+                    type="radio"
+                    name="falta"
+                    value="nao"
+                    checked={formData.falta === false}
+                    onChange={handleInputChange}
                   />
                   Não
                 </label>
@@ -224,19 +273,30 @@ export const Faltas = () => {
             </label>
             <label className="flex flex-col">
               <span>Atestado:</span>
-              <input 
-                type="text" 
-                name="atestado" 
+              <input
+                type="text"
+                name="atestado"
                 value={formData.atestado}
-                onChange={handleInputChange} 
+                onChange={handleInputChange}
                 className="p-2 rounded bg-gray-200 text-black"
               />
             </label>
             <label className="flex flex-col col-span-2">
               <span>Senha:</span>
-              <input type="password" value={senha} onChange={handleSenhaChange} className="p-2 rounded bg-gray-200 text-black" />
+              <input
+                type="password"
+                value={senha}
+                onChange={handleSenhaChange}
+                className="p-2 rounded bg-gray-200 text-black"
+              />
             </label>
-            <button onClick={handleSave} disabled={!isSenhaValida} className={`bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2 ${!isSenhaValida ? "opacity-50 cursor-not-allowed" : ""}`}>
+            <button
+              onClick={handleSave}
+              disabled={!isSenhaValida}
+              className={`bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2 ${
+                !isSenhaValida ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
               Salvar
             </button>
           </div>

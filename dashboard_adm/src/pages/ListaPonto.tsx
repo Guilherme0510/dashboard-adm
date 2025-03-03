@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { utils } from "xlsx";
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   query,
+  Timestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -15,10 +17,12 @@ import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { writeFile } from "xlsx-js-style";
+import { EditPonto } from "../components/EditPonto";
 
 interface Ponto {
+  id: null | undefined;
   nome: string;
-  dia: string;
+  dia: Timestamp;
   diaSemana: string;
   pontoEntrada: string;
   pontoAlmoco: string;
@@ -59,6 +63,9 @@ export const ListaPonto = () => {
   const [termoPesquisa, setTermoPesquisa] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+  const [dadosPontoComCalculados, setDadosPontoComCalculados] = useState<
+    Ponto[]
+  >([]);
 
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
   const admUser = import.meta.env.VITE_ADM_USER;
@@ -80,14 +87,13 @@ export const ListaPonto = () => {
         let q = query(pontosRef);
 
         if (dataInicio && dataFim) {
-          // Converte as datas de entrada para o formato "yyyy-mm-dd"
-          const dataInicioFormatada = formatarData(dataInicio);
-          const dataFimFormatada = formatarData(dataFim);
+          const dataInicioTimestamp = Timestamp.fromDate(new Date(dataInicio));
+          const dataFimTimestamp = Timestamp.fromDate(new Date(dataFim));
 
           q = query(
             pontosRef,
-            where("dia", ">=", dataInicioFormatada),
-            where("dia", "<=", dataFimFormatada)
+            where("dia", ">=", dataInicioTimestamp),
+            where("dia", "<=", dataFimTimestamp)
           );
         }
 
@@ -106,58 +112,65 @@ export const ListaPonto = () => {
     fetchDados();
   }, [dataInicio, dataFim]);
 
+  const excluirPonto = async (id: any) => {
+    try {
+      await deleteDoc(doc(db, "pontos", id));
+      console.log("Ponto excluído com sucesso!");
+
+      // Atualiza a lista de pontos após a exclusão
+      setDadosPonto((prevDados) =>
+        prevDados.filter((ponto) => ponto.id !== id)
+      );
+    } catch (error) {
+      console.error("Erro ao excluir ponto:", error);
+    }
+  };
+
   useEffect(() => {
-    if (dadosPonto.length === 0) return;
+    if (!dadosPonto.length) return;
 
     const calcularAtrasoEHoraExtra = async () => {
       try {
         const usuariosRef = collection(db, "usuarios");
         const usuariosSnapshot = await getDocs(usuariosRef);
 
-        const horariosUsuarios = usuariosSnapshot.docs.reduce((acc, doc) => {
-          const nomeUsuario = doc.data().nome;
-          acc[nomeUsuario] = {
-            primeiroPonto: doc.data().primeiroPonto?.trim(),
-            segundoPonto: doc.data().segundoPonto?.trim(),
-            terceiroPonto: doc.data().terceiroPonto?.trim(),
-            quartoPonto: doc.data().quartoPonto?.trim(),
-          };
-          return acc;
-        }, {} as Record<string, any>);
+        const horariosUsuarios = usuariosSnapshot.docs.reduce(
+          (
+            acc: Record<
+              string,
+              {
+                primeiroPonto?: string;
+                segundoPonto?: string;
+                terceiroPonto?: string;
+                quartoPonto?: string;
+              }
+            >,
+            doc
+          ) => {
+            const nomeUsuario = doc.data().nome;
+            acc[nomeUsuario] = {
+              primeiroPonto: doc.data().primeiroPonto?.trim(),
+              segundoPonto: doc.data().segundoPonto?.trim(),
+              terceiroPonto: doc.data().terceiroPonto?.trim(),
+              quartoPonto: doc.data().quartoPonto?.trim(),
+            };
+            return acc;
+          },
+          {}
+        );
 
-        const novosDadosPonto = dadosPonto.map((ponto) => {
-          const horariosEsperados = horariosUsuarios[ponto.nome];
-
-          const criarData = (hora: string) => {
-            const [horaParte, minutoParte] = hora
-              .split(":")
-              .map((parte) => parte.trim());
-            return new Date(`1970-01-01T${horaParte}:${minutoParte}:00`);
-          };
-
-          const entradaReal = ponto.pontoEntrada
-            ? criarData(ponto.pontoEntrada)
-            : null;
-          const almocoSaida = ponto.pontoAlmoco
-            ? criarData(ponto.pontoAlmoco)
-            : null;
-          const almocoVolta = ponto.pontoVolta
-            ? criarData(ponto.pontoVolta)
-            : null;
-          const saidaReal = ponto.pontoSaida
-            ? criarData(ponto.pontoSaida)
-            : null;
-
-          const entradaEsperada = horariosEsperados.primeiroPonto
-            ? criarData(horariosEsperados.primeiroPonto)
-            : null;
-          const saidaEsperada = horariosEsperados.quartoPonto
-            ? criarData(horariosEsperados.quartoPonto)
-            : null;
-
+        const calcularHoras = (
+          entradaReal: Date | null,
+          almocoSaida: Date | null,
+          almocoVolta: Date | null,
+          saidaReal: Date | null,
+          entradaEsperada: Date | null,
+          saidaEsperada: Date | null
+        ) => {
           let atraso = 0;
           let horasExtras = 0;
           let horasTrabalhadas = 0;
+
           if (entradaReal && saidaReal) {
             horasTrabalhadas =
               (saidaReal.getTime() - entradaReal.getTime()) / 3600000;
@@ -168,6 +181,7 @@ export const ListaPonto = () => {
               horasTrabalhadas -= tempoAlmoco;
             }
           }
+
           const jornadaEsperada =
             entradaEsperada && saidaEsperada
               ? (saidaEsperada.getTime() - entradaEsperada.getTime()) / 3600000
@@ -184,6 +198,47 @@ export const ListaPonto = () => {
           } else {
             atraso = jornadaEfetiva - horasTrabalhadas;
           }
+
+          return { atraso, horasExtras };
+        };
+
+        const novosDadosPonto = dadosPonto.map((ponto) => {
+          const horariosEsperados = horariosUsuarios[ponto.nome];
+          const criarData = (hora: any) => {
+            const [horaParte, minutoParte] = hora
+              .split(":")
+              .map((parte: any) => parte.trim());
+            return new Date(`1970-01-01T${horaParte}:${minutoParte}:00`);
+          };
+
+          const entradaReal = ponto.pontoEntrada
+            ? criarData(ponto.pontoEntrada)
+            : null;
+          const almocoSaida = ponto.pontoAlmoco
+            ? criarData(ponto.pontoAlmoco)
+            : null;
+          const almocoVolta = ponto.pontoVolta
+            ? criarData(ponto.pontoVolta)
+            : null;
+          const saidaReal = ponto.pontoSaida
+            ? criarData(ponto.pontoSaida)
+            : null;
+          const entradaEsperada = horariosEsperados.primeiroPonto
+            ? criarData(horariosEsperados.primeiroPonto)
+            : null;
+          const saidaEsperada = horariosEsperados.quartoPonto
+            ? criarData(horariosEsperados.quartoPonto)
+            : null;
+
+          const { atraso, horasExtras } = calcularHoras(
+            entradaReal,
+            almocoSaida,
+            almocoVolta,
+            saidaReal,
+            entradaEsperada,
+            saidaEsperada
+          );
+
           const formatarHoraMinuto = (horas: number) => {
             const minutos = Math.round(horas * 60);
             const horasFormatadas = Math.floor(minutos / 60);
@@ -192,6 +247,7 @@ export const ListaPonto = () => {
               minutosRestantes
             ).padStart(2, "0")}`;
           };
+
           return {
             ...ponto,
             atrasos: formatarHoraMinuto(atraso),
@@ -199,7 +255,7 @@ export const ListaPonto = () => {
           };
         });
 
-        setDadosPonto(novosDadosPonto);
+        setDadosPontoComCalculados(novosDadosPonto);
       } catch (error) {
         console.error("Erro ao calcular atraso e hora extra:", error);
       }
@@ -208,7 +264,7 @@ export const ListaPonto = () => {
     calcularAtrasoEHoraExtra();
   }, [dadosPonto]);
 
-  const dadosFiltrados = dadosPonto.filter((ponto) =>
+  const dadosFiltrados = dadosPontoComCalculados.filter((ponto) =>
     ponto.nome.toLowerCase().includes(termoPesquisa.toLowerCase())
   );
 
@@ -229,11 +285,10 @@ export const ListaPonto = () => {
         )}`;
       };
 
-      // Mapeamento dos dados formatados
       const dadosFormatados: DadosFormatados[] = dadosFiltrados.map(
         (ponto) => ({
           Nome: ponto.nome ?? "",
-          Data: ponto.dia ?? "",
+          Data: formatarData(ponto.dia),
           "Dia da Semana": ponto.diaSemana ?? "",
           "Ponto Entrada": ponto.pontoEntrada ?? "",
           "Ponto Almoço": ponto.pontoAlmoco ?? "",
@@ -245,7 +300,6 @@ export const ListaPonto = () => {
         })
       );
 
-      // Adiciona uma linha em branco
       dadosFormatados.push({
         Nome: "",
         Data: "",
@@ -271,26 +325,27 @@ export const ListaPonto = () => {
               "Total de Faltas": 0,
             };
           }
-  
+
           acc[ponto.nome]["Total de Dias Trabalhados"] += 1;
-  
+
           // Converte atraso e hora extra para minutos antes de somar
           const atrasoMinutos = ponto.atrasos
-            ? parseInt(ponto.atrasos.split(":")[0]) * 60 + parseInt(ponto.atrasos.split(":")[1])
+            ? parseInt(ponto.atrasos.split(":")[0]) * 60 +
+              parseInt(ponto.atrasos.split(":")[1])
             : 0;
-  
+
           const horaExtraMinutos = ponto.horasExtras
-            ? parseInt(ponto.horasExtras.split(":")[0]) * 60 + parseInt(ponto.horasExtras.split(":")[1])
+            ? parseInt(ponto.horasExtras.split(":")[0]) * 60 +
+              parseInt(ponto.horasExtras.split(":")[1])
             : 0;
-  
+
           acc[ponto.nome]["Total de Atrasos (hh:mm)"] += atrasoMinutos;
           acc[ponto.nome]["Total de Horas Extras (hh:mm)"] += horaExtraMinutos;
           acc[ponto.nome]["Total de Faltas"] += ponto.falta ? 1 : 0;
-  
+
           return acc;
         }, {} as Record<string, ResumoMensal>)
       );
-  
 
       // Converte os totais para formato hh:mm
       resumoMensal.forEach((resumo: any) => {
@@ -299,7 +354,7 @@ export const ListaPonto = () => {
             resumo["Total de Atrasos (hh:mm)"] % 60
           }`
         );
-  
+
         resumo["Total de Horas Extras (hh:mm)"] = formatarHoraMinuto(
           `${Math.floor(resumo["Total de Horas Extras (hh:mm)"] / 60)}:${
             resumo["Total de Horas Extras (hh:mm)"] % 60
@@ -424,7 +479,7 @@ export const ListaPonto = () => {
     }
   };
 
-  const abrirModal = (ponto: SetStateAction<null>) => {
+  const abrirModal = (ponto: any) => {
     setPontoSelecionado(ponto);
     setModalAberto(true);
   };
@@ -439,7 +494,7 @@ export const ListaPonto = () => {
   const salvarDados = async () => {
     if (pontoSelecionado && pontoSelecionado.id) {
       try {
-        const dataFormatada = formatarData(pontoSelecionado.dia);
+        const dataFormatada = pontoSelecionado.dia;
         let fileURL = pontoSelecionado.arquivoURL || null;
         if (pontoSelecionado.arquivo) {
           const storage = getStorage();
@@ -479,11 +534,19 @@ export const ListaPonto = () => {
       }
     }
   };
-  const formatarData = (data: string) => {
-    const [ano, mes, dia] = data.split("/");
-    return `${dia}-${mes}-${ano}`;
+  const formatarData = (data: any) => {
+    if (data instanceof Timestamp) {
+      const date = data.toDate();
+      const dia = date.getDate().toString().padStart(2, "0");
+      const mes = (date.getMonth() + 1).toString().padStart(2, "0");
+      const ano = date.getFullYear().toString();
+      return `${dia}/${mes}/${ano}`;
+    } else if (typeof data === "string") {
+      return data;
+    } else {
+      return "";
+    }
   };
-
   const verificarSenha = (valor: any) => {
     setSenha(valor);
     setSenhaCorreta(valor === "1");
@@ -557,13 +620,22 @@ export const ListaPonto = () => {
             {dadosExibidos.map((ponto) => (
               <tr key={ponto.id} className="border-b border-gray-700">
                 <td className="px-6 py-4">{ponto.nome}</td>
-                <td className="px-6 py-4">{ponto.dia}</td>
+
+                <td className="px-6 py-4">
+                  {ponto.dia instanceof Date
+                    ? ponto.dia.toLocaleDateString()
+                    : new Date(ponto.dia.seconds * 1000).toLocaleDateString()}
+                </td>
+
                 <td className="px-6 py-4">{ponto.diaSemana}</td>
+
                 <td className="px-6 py-4">
                   {ponto.falta ? "Falta" : "Presente"}
                 </td>
+
                 <td className="px-6 py-4">{ponto.atrasos}</td>
                 <td className="px-6 py-4">{ponto.horasExtras}</td>
+
                 <td className="px-6 py-4">
                   <button
                     onClick={() => abrirModal(ponto)}
@@ -571,6 +643,9 @@ export const ListaPonto = () => {
                   >
                     <FaArrowRight />
                   </button>
+                </td>
+                <td>
+                  <button onClick={() => excluirPonto(ponto.id)}>excluir</button>
                 </td>
               </tr>
             ))}
@@ -586,7 +661,7 @@ export const ListaPonto = () => {
             <FaArrowLeft />
           </button>
           <span className="text-white">
-            Página {paginaAtual} de {totalPaginas}
+            {paginaAtual} - {totalPaginas}
           </span>
           <button
             onClick={() =>
@@ -600,226 +675,16 @@ export const ListaPonto = () => {
           </button>
         </div>
       </div>
-
       {modalAberto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-[#35486E] p-6 rounded-lg w-96">
-            <h3 className="text-xl mb-4">Editar Ponto</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block font-bold mb-1">Nome</label>
-                <input
-                  type="text"
-                  value={pontoSelecionado?.nome || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      nome: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Dia da semana</label>
-                <select
-                  value={pontoSelecionado?.diaSemana || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      diaSemana: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                >
-                  <option value="">Selecione</option>
-                  <option value="Segunda-feira">Segunda-feira</option>
-                  <option value="Terça-feira">Terça-feira</option>
-                  <option value="Quarta-feira">Quarta-feira</option>
-                  <option value="Quinta-feira">Quinta-feira</option>
-                  <option value="Sexta-feira">Sexta-feira</option>
-                  <option value="Sábado">Sábado</option>
-                  <option value="Domingo">Domingo</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Data</label>
-                <input
-                  type="date"
-                  value={pontoSelecionado?.dia || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      dia: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Ponto Entrada</label>
-                <input
-                  type="text"
-                  value={pontoSelecionado?.pontoEntrada || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      pontoEntrada: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Ponto Almoço</label>
-                <input
-                  type="text"
-                  value={pontoSelecionado?.pontoAlmoco || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      pontoAlmoco: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Ponto Volta</label>
-                <input
-                  type="text"
-                  value={pontoSelecionado?.pontoVolta || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      pontoVolta: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Ponto Saída</label>
-                <input
-                  type="text"
-                  value={pontoSelecionado?.pontoSaida || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      pontoSaida: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Horas Extras</label>
-                <input
-                  type="text"
-                  value={pontoSelecionado?.horasExtras || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      horasExtras: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Atrasos</label>
-                <input
-                  type="text"
-                  value={pontoSelecionado?.atrasos || ""}
-                  onChange={(e) =>
-                    setPontoSelecionado({
-                      ...pontoSelecionado,
-                      atrasos: e.target.value,
-                    })
-                  }
-                  className="p-2 border rounded w-full text-black"
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="block font-bold mb-1">Falta</label>
-                <div className="flex gap-4">
-                  <label>
-                    <input
-                      type="radio"
-                      value="true"
-                      checked={pontoSelecionado?.falta === true}
-                      onChange={() =>
-                        setPontoSelecionado({
-                          ...pontoSelecionado,
-                          falta: true,
-                        })
-                      }
-                    />
-                    Sim
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="false"
-                      checked={pontoSelecionado?.falta === false}
-                      onChange={() =>
-                        setPontoSelecionado({
-                          ...pontoSelecionado,
-                          falta: false,
-                        })
-                      }
-                    />
-                    Não
-                  </label>
-                </div>
-                <div className="mt-2">
-                  <label className="block font-bold mb-1">Atestado</label>
-                  <input
-                    type="text"
-                    value={pontoSelecionado?.atestado || ""}
-                    onChange={(e) =>
-                      setPontoSelecionado({
-                        ...pontoSelecionado,
-                        atestado: e.target.value,
-                      })
-                    }
-                    placeholder="Insira o link do atestado"
-                    className="p-2 border rounded w-full text-black"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="mt-5">
-              <label className="block font-bold mb-1">Senha</label>
-              <input
-                type="password"
-                value={senha}
-                onChange={(e) => verificarSenha(e.target.value)}
-                placeholder="Digite a senha"
-                className="p-2 border rounded w-full text-black"
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={salvarDados}
-                disabled={!senhaCorreta}
-                className={`px-4 py-2 rounded ${
-                  senhaCorreta
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-500 text-gray-300 cursor-not-allowed"
-                }`}
-              >
-                Salvar
-              </button>
-              <button
-                onClick={fecharModal}
-                className="bg-gray-500 text-white px-4 py-2 rounded"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditPonto
+          pontoSelecionado={pontoSelecionado}
+          setPontoSelecionado={setPontoSelecionado}
+          salvarDados={salvarDados}
+          fecharModal={fecharModal}
+          senha={senha}
+          verificarSenha={verificarSenha}
+          senhaCorreta={senhaCorreta}
+        />
       )}
     </div>
   );
