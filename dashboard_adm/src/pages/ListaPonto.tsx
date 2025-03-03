@@ -4,7 +4,7 @@ import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { utils } from "xlsx";
 import {
   collection,
-  deleteDoc,
+  // deleteDoc,
   doc,
   getDocs,
   query,
