@@ -4,7 +4,6 @@ import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { utils } from "xlsx";
 import {
   collection,
-  deleteDoc,
   doc,
   getDocs,
   query,
@@ -80,51 +79,39 @@ export const ListaPonto = () => {
   const [senha, setSenha] = useState("");
   const [senhaCorreta, setSenhaCorreta] = useState(false);
 
-  useEffect(() => {
-    const fetchDados = async () => {
-      try {
-        const pontosRef = collection(db, "pontos");
-        let q = query(pontosRef);
-
-        if (dataInicio && dataFim) {
-          const dataInicioTimestamp = Timestamp.fromDate(new Date(dataInicio));
-          const dataFimTimestamp = Timestamp.fromDate(new Date(dataFim));
-
-          q = query(
-            pontosRef,
-            where("dia", ">=", dataInicioTimestamp),
-            where("dia", "<=", dataFimTimestamp)
-          );
-        }
-
-        const querySnapshot = await getDocs(q);
-        const dados = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        setDadosPonto(dados);
-      } catch (error) {
-        console.error("Erro ao buscar dados:", error);
-      }
-    };
-
-    fetchDados();
-  }, [dataInicio, dataFim]);
-
-  const excluirPonto = async (id: any) => {
+useEffect(() => {
+  const fetchDados = async () => {
     try {
-      await deleteDoc(doc(db, "pontos", id));
-      console.log("Ponto excluído com sucesso!");
+      const pontosRef = collection(db, "pontos");
+      let q = query(pontosRef);
 
-      // Atualiza a lista de pontos após a exclusão
-      setDadosPonto((prevDados) =>
-        prevDados.filter((ponto) => ponto.id !== id)
-      );
+      if (dataInicio && dataFim) {
+        const dataInicioTimestamp = Timestamp.fromDate(new Date(dataInicio));
+        const dataFimTimestamp = Timestamp.fromDate(new Date(dataFim));
+
+        q = query(
+          pontosRef,
+          where("dia", ">=", dataInicioTimestamp),
+          where("dia", "<=", dataFimTimestamp)
+        );
+      }
+
+      const querySnapshot = await getDocs(q);
+      const dados = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setDadosPonto(dados);
     } catch (error) {
-      console.error("Erro ao excluir ponto:", error);
+      console.error("Erro ao buscar dados:", error);
     }
   };
+
+  fetchDados();
+}, [dataInicio, dataFim]);
+
+
 
   useEffect(() => {
     if (!dadosPonto.length) return;
@@ -643,9 +630,6 @@ export const ListaPonto = () => {
                   >
                     <FaArrowRight />
                   </button>
-                </td>
-                <td>
-                  <button onClick={() => excluirPonto(ponto.id)}>excluir</button>
                 </td>
               </tr>
             ))}
