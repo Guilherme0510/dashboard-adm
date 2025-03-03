@@ -4,6 +4,7 @@ import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { utils } from "xlsx";
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   query,
@@ -17,6 +18,8 @@ import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { writeFile } from "xlsx-js-style";
 import { EditPonto } from "../components/EditPonto";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 interface Ponto {
   id: null | undefined;
@@ -79,39 +82,51 @@ export const ListaPonto = () => {
   const [senha, setSenha] = useState("");
   const [senhaCorreta, setSenhaCorreta] = useState(false);
 
-useEffect(() => {
-  const fetchDados = async () => {
-    try {
-      const pontosRef = collection(db, "pontos");
-      let q = query(pontosRef);
+  useEffect(() => {
+    const fetchDados = async () => {
+      try {
+        const pontosRef = collection(db, "pontos");
+        let q = query(pontosRef);
 
-      if (dataInicio && dataFim) {
-        const dataInicioTimestamp = Timestamp.fromDate(new Date(dataInicio));
-        const dataFimTimestamp = Timestamp.fromDate(new Date(dataFim));
+        if (dataInicio && dataFim) {
+          const dataInicioTimestamp = Timestamp.fromDate(new Date(dataInicio));
+          const dataFimTimestamp = Timestamp.fromDate(new Date(dataFim));
 
-        q = query(
-          pontosRef,
-          where("dia", ">=", dataInicioTimestamp),
-          where("dia", "<=", dataFimTimestamp)
-        );
+          q = query(
+            pontosRef,
+            where("dia", ">=", dataInicioTimestamp),
+            where("dia", "<=", dataFimTimestamp)
+          );
+        }
+
+        const querySnapshot = await getDocs(q);
+        const dados = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setDadosPonto(dados);
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
       }
+    };
 
-      const querySnapshot = await getDocs(q);
-      const dados = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+    fetchDados();
+  }, [dataInicio, dataFim]);
 
-      setDadosPonto(dados);
+  const excluirPonto = async (id: any) => {
+    try {
+      await deleteDoc(doc(db, "pontos", id));
+      console.log("Ponto excluído com sucesso!");
+
+      // Atualiza a lista de pontos após a exclusão
+      setDadosPonto((prevDados) =>
+        prevDados.filter((ponto) => ponto.id !== id)
+      );
     } catch (error) {
-      console.error("Erro ao buscar dados:", error);
+      console.error("Erro ao excluir ponto:", error);
     }
   };
-
-  fetchDados();
-}, [dataInicio, dataFim]);
-
-
 
   useEffect(() => {
     if (!dadosPonto.length) return;
@@ -630,6 +645,9 @@ useEffect(() => {
                   >
                     <FaArrowRight />
                   </button>
+                </td>
+                <td>
+                  <button onClick={() => excluirPonto(ponto.id)}><FontAwesomeIcon icon={faTrash} color="#FF0000" /></button>
                 </td>
               </tr>
             ))}
