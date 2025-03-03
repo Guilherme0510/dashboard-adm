@@ -18,8 +18,8 @@ import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { writeFile } from "xlsx-js-style";
 import { EditPonto } from "../components/EditPonto";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 interface Ponto {
   id: null | undefined;
@@ -114,19 +114,17 @@ export const ListaPonto = () => {
     fetchDados();
   }, [dataInicio, dataFim]);
 
-  const excluirPonto = async (id: any) => {
-    try {
-      await deleteDoc(doc(db, "pontos", id));
-      console.log("Ponto excluído com sucesso!");
-
-      // Atualiza a lista de pontos após a exclusão
-      setDadosPonto((prevDados) =>
-        prevDados.filter((ponto) => ponto.id !== id)
-      );
-    } catch (error) {
-      console.error("Erro ao excluir ponto:", error);
-    }
-  };
+  // const excluirPonto = async (id: any) => {
+  //   try {
+  //     await deleteDoc(doc(db, "pontos", id));
+  //     console.log("Ponto excluído com sucesso!");
+  //     setDadosPonto((prevDados) =>
+  //       prevDados.filter((ponto) => ponto.id !== id)
+  //     );
+  //   } catch (error) {
+  //     console.error("Erro ao excluir ponto:", error);
+  //   }
+  // };
 
   useEffect(() => {
     if (!dadosPonto.length) return;
@@ -646,9 +644,9 @@ export const ListaPonto = () => {
                     <FaArrowRight />
                   </button>
                 </td>
-                <td>
+                {/* <td>
                   <button onClick={() => excluirPonto(ponto.id)}><FontAwesomeIcon icon={faTrash} color="#FF0000" /></button>
-                </td>
+                </td> */}
               </tr>
             ))}
           </tbody>
