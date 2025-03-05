@@ -549,7 +549,7 @@ export const ListaPonto = () => {
   };
   const verificarSenha = (valor: any) => {
     setSenha(valor);
-    setSenhaCorreta(valor === "1");
+    setSenhaCorreta(valor === "068543");
   };
 
   return (

@@ -121,7 +121,7 @@ export const Faltas = () => {
   const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSenha(value);
-    setIsSenhaValida(value === "1");
+    setIsSenhaValida(value === "068543");
   };
 
   const handleSave = async () => {

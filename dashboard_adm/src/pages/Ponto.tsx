@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
@@ -7,7 +8,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { FaArrowRight } from "react-icons/fa";
 import { useAuth } from "../context/Context";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   collection,
   doc,
@@ -20,6 +21,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { Value } from "react-calendar/dist/esm/shared/types.js";
+import Popup from "reactjs-popup";
+import "reactjs-popup/dist/index.css";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -44,6 +47,9 @@ export const Ponto = () => {
   const [atrasos, setAtrasos] = useState<string>("");
   const [, setDadosDoDia] = useState<any | null>(null);
   const [botaoDesabilitado, setBotaoDesabilitado] = useState(false);
+  const [mostrarPopup, setMostrarPopup] = useState(false);
+
+  const navigate = useNavigate();
 
   const MAX_CLIQUES = 4;
 
@@ -186,12 +192,15 @@ export const Ponto = () => {
           dadosAtuais.pontoVolta || (cliquesPonto === 2 ? horaAtual : null),
         pontoSaida:
           dadosAtuais.pontoSaida || (cliquesPonto === 3 ? horaAtual : null),
-        horasExtras: horasExtras || "00:00",
-        atrasos: atrasos || "00:00",
+        horasExtras: dadosAtuais.horasExtras || horasExtras || "00:00",
+        atrasos: dadosAtuais.atrasos || atrasos || "00:00",
       };
 
       await setDoc(pontoRef, pontoData, { merge: true });
+
       console.log("Ponto registrado/atualizado com sucesso!");
+    } else {
+      console.log("Máximo de pontos atingido para hoje.");
     }
   };
 
@@ -214,51 +223,30 @@ export const Ponto = () => {
   };
 
   useEffect(() => {
-    const carregarPontosDoDia = async () => {
-      try {
-        const dataFormatada = dataSelecionada.toLocaleDateString();
-        const nomeUsuario = nome;
+    const carregarPontos = async () => {
+      const dataId = dataSelecionada.toISOString().split("T")[0];
+      const nomeUsuario = nome.replace(/\s+/g, "_");
+      const documentoId = `${nomeUsuario}-${dataId}`;
+      const pontoRef = doc(db, "pontos", documentoId);
 
-        const pontosQuery = query(
-          collection(db, "pontos"),
-          where("dia", "==", dataFormatada),
-          where("nome", "==", nomeUsuario)
-        );
+      const docSnapshot = await getDoc(pontoRef);
 
-        const querySnapshot = await getDocs(pontosQuery);
+      if (docSnapshot.exists()) {
+        const dados = docSnapshot.data();
 
-        if (!querySnapshot.empty) {
-          querySnapshot.forEach((docSnapshot) => {
-            const dados = docSnapshot.data();
-            setDadosDoDia(dados);
+        const pontosExistentes = [
+          dados.pontoEntrada,
+          dados.pontoAlmoco,
+          dados.pontoVolta,
+          dados.pontoSaida,
+        ].filter(Boolean);
 
-            if (dados.pontoEntrada && dados.pontoSaida) {
-              setBotaoDesabilitado(true);
-            }
-            const cliques = [
-              dados.pontoEntrada,
-              dados.pontoAlmoco,
-              dados.pontoVolta,
-              dados.pontoSaida,
-            ].filter(Boolean).length;
-            setCliquesPonto(cliques);
-
-            setRegistrosPonto(
-              [
-                dados.pontoEntrada,
-                dados.pontoAlmoco,
-                dados.pontoVolta,
-                dados.pontoSaida,
-              ].filter(Boolean)
-            );
-          });
-        }
-      } catch (error) {
-        console.error("Erro ao carregar os pontos do dia:", error);
+        setRegistrosPonto(pontosExistentes);
+        setCliquesPonto(pontosExistentes.length);
       }
     };
 
-    carregarPontosDoDia();
+    carregarPontos();
   }, [dataSelecionada, nome]);
 
   useEffect(() => {
@@ -332,8 +320,14 @@ export const Ponto = () => {
   useEffect(() => {
     if (registrosPonto.length === MAX_CLIQUES) {
       setBotaoDesabilitado(true);
+      setMostrarPopup(true);
     }
   }, [registrosPonto]);
+
+  const handleClosePopup = () => {
+    setMostrarPopup(false);
+    navigate("/"); // Redireciona para a tela de login
+  };
 
   useEffect(() => {
     const carregarFaltas = async () => {
@@ -446,6 +440,37 @@ export const Ponto = () => {
           </Link>
         </div>
       </div>
+      {mostrarPopup && (
+         <Popup
+         open={mostrarPopup}
+         position="top center"
+         closeOnDocumentClick
+         onClose={() => setMostrarPopup(false)}
+         contentStyle={{
+           borderRadius: "10px",
+           padding: "20px",
+           width: "300px",
+           textAlign: "center",
+           backgroundColor: "#fff",
+           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
+         }}
+       >
+         <div className="text-center">
+           <h3 className="text-xl font-semibold text-gray-800">
+             Parabéns! Você finalizou seu turno. 🎉
+           </h3>
+           <p className="text-gray-600 mt-2">
+             Aproveite seu descanso e volte renovado para o próximo dia! 🛌💤
+           </p>
+           <button
+             onClick={handleClosePopup}
+             className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
+           >
+             Fechar
+           </button>
+         </div>
+       </Popup>
+      )}
     </div>
   );
 };
