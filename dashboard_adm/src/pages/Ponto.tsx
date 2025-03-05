@@ -50,6 +50,8 @@ export const Ponto = () => {
   const [mostrarPopup, setMostrarPopup] = useState(false);
 
   const navigate = useNavigate();
+  const [   tempoRestante, setTempoRestante] = useState(5);
+  const TEMPO_COOLDOWN = 5;
 
   const MAX_CLIQUES = 4;
 
@@ -155,6 +157,12 @@ export const Ponto = () => {
   }, [intervaloCliques, cargaHoraria]);
 
   const baterPonto = async () => {
+
+    if (botaoDesabilitado) return;
+
+    setBotaoDesabilitado(true);
+    setTempoRestante(TEMPO_COOLDOWN);
+
     if (cliquesPonto < MAX_CLIQUES) {
       const novosRegistros = [...registrosPonto, horaAtual];
       setRegistrosPonto(novosRegistros);
@@ -326,8 +334,25 @@ export const Ponto = () => {
 
   const handleClosePopup = () => {
     setMostrarPopup(false);
-    navigate("/"); // Redireciona para a tela de login
+    navigate("/");
   };
+
+  useEffect(() => {
+  if (botaoDesabilitado) {
+    const intervalo = setInterval(() => {
+      setTempoRestante((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalo);
+          setBotaoDesabilitado(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 60 * 1000); // Atualiza a cada 1 minuto
+
+    return () => clearInterval(intervalo);
+  }
+  }, [botaoDesabilitado]);
 
   useEffect(() => {
     const carregarFaltas = async () => {
@@ -369,16 +394,16 @@ export const Ponto = () => {
           </div>
           <h2 className="text-xl capitalize mt-2">{nome.replace(".", " ")}</h2>
           <button
-            className={`mt-4 px-6 py-2 font-bold rounded-lg shadow ${
-              botaoDesabilitado
-                ? "bg-gray-500 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-600"
-            }`}
-            onClick={baterPonto}
-            disabled={botaoDesabilitado}
-          >
-            {botaoDesabilitado ? "Pontos do dia registrados" : "Bater o Ponto"}
-          </button>
+    className={`mt-4 px-6 py-2 font-bold rounded-lg shadow ${
+      botaoDesabilitado
+        ? "bg-gray-500 cursor-not-allowed"
+        : "bg-green-500 hover:bg-green-600"
+    }`}
+    onClick={baterPonto}
+    disabled={botaoDesabilitado}
+  >
+    {botaoDesabilitado ? `Aguarde ${tempoRestante}m` : "Bater o Ponto"}
+  </button>
         </div>
 
         <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-start justify-start rounded-lg shadow-lg">
@@ -441,35 +466,35 @@ export const Ponto = () => {
         </div>
       </div>
       {mostrarPopup && (
-         <Popup
-         open={mostrarPopup}
-         position="top center"
-         closeOnDocumentClick
-         onClose={() => setMostrarPopup(false)}
-         contentStyle={{
-           borderRadius: "10px",
-           padding: "20px",
-           width: "300px",
-           textAlign: "center",
-           backgroundColor: "#fff",
-           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
-         }}
-       >
-         <div className="text-center">
-           <h3 className="text-xl font-semibold text-gray-800">
-             Parabéns! Você finalizou seu turno. 🎉
-           </h3>
-           <p className="text-gray-600 mt-2">
-             Aproveite seu descanso e volte renovado para o próximo dia! 🛌💤
-           </p>
-           <button
-             onClick={handleClosePopup}
-             className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
-           >
-             Fechar
-           </button>
-         </div>
-       </Popup>
+        <Popup
+          open={mostrarPopup}
+          position="top center"
+          closeOnDocumentClick
+          onClose={() => setMostrarPopup(false)}
+          contentStyle={{
+            borderRadius: "10px",
+            padding: "20px",
+            width: "300px",
+            textAlign: "center",
+            backgroundColor: "#fff",
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
+          }}
+        >
+          <div className="text-center">
+            <h3 className="text-xl font-semibold text-gray-800">
+              Parabéns! Você finalizou seu turno. 🎉
+            </h3>
+            <p className="text-gray-600 mt-2">
+              Aproveite seu descanso e volte renovado para o próximo dia! 🛌💤
+            </p>
+            <button
+              onClick={handleClosePopup}
+              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
+            >
+              Fechar
+            </button>
+          </div>
+        </Popup>
       )}
     </div>
   );
