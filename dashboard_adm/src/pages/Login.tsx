@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import  { FormEvent, useState } from "react";
 import { auth } from "../config/firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -12,20 +13,24 @@ export const Login = () => {
 
   const handleLoginSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+  
     if (!email || !password) {
       toast.error("Por favor, preencha ambos os campos.");
       return;
     }
-
+  
     try {
       await signInWithEmailAndPassword(auth, email, password);
       console.log("Logado com sucesso");
-      navigate("/home");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
+      if (email === "josenilda.gomes@grupomapscartaodigital.com.br") {
+        navigate("/listaponto");
+      } else {
+        navigate("/home");
+      }
     } catch (error: any) {
       console.log("Erro capturado:", error);
-
+  
       if (error.code === "auth/invalid-credential/password") {
         toast.error("Senha incorreta. Tente novamente.");
       } else if (error.code === "auth/user-not-found") {
@@ -37,6 +42,7 @@ export const Login = () => {
       }
     }
   };
+  
 
   return (
     <div className="relative h-screen flex flex-col items-center justify-center">

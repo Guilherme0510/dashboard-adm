@@ -26,7 +26,7 @@ export const Sidebar = () => {
     const auth = getAuth();
     const usuario = auth.currentUser;
     if (usuario) {
-      setUsuarioLogadoId(usuario.uid); 
+      setUsuarioLogadoId(usuario.uid);
     }
   }, []);
 
@@ -46,44 +46,49 @@ export const Sidebar = () => {
     <div className="flex flex-col items-center text-white">
       <div className="mt-5 flex flex-col items-center text-center">
         <img
-          src='/kaio.png'
+          src="/kaio.png"
           alt="Imagem Fictícia"
           className="w-[120px] h-[150px] rounded-full"
         />
         <div className="mt-4">
-          <h2 className="text-xl capitalize">{nome.replace('.', ' ')}</h2>
+          <h2 className="text-xl capitalize">{nome.replace(".", " ")}</h2>
           <h2 className="text-md">{cargo}</h2>
         </div>
       </div>
 
       <div className="space-y-2 gap-2 flex flex-col">
-        <NavLink
-          className={({ isActive }) =>
-            `flex items-center mt-5 gap-3 px-3 py-2 transition-all duration-300 ease-in-out transform ${
-              isActive
-                ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
-                : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
-            }`
-          }
-          to={"/home"}
-        >
-          <FontAwesomeIcon icon={faTachometerAlt} className="w-5 h-5" />
-          <p className="hidden md:block">Dashboard</p>
-        </NavLink>
-        <NavLink
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
-              isActive
-                ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
-                : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
-            }`
-          }
-          to="/ponto"
-        >
-          <FontAwesomeIcon icon={faClock} className="w-5 h-5" />
-          <span>Ponto Maps</span>
-        </NavLink>
-        {usuarioLogadoId === (contabilidadeUser && admUser) && (
+        {usuarioLogadoId !== contabilidadeUser && (
+          <>
+            <NavLink
+              className={({ isActive }) =>
+                `flex items-center mt-5 gap-3 px-3 py-2 transition-all duration-300 ease-in-out transform ${
+                  isActive
+                    ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
+                    : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
+                }`
+              }
+              to={"/home"}
+            >
+              <FontAwesomeIcon icon={faTachometerAlt} className="w-5 h-5" />
+              <p className="hidden md:block">Dashboard</p>
+            </NavLink>
+            <NavLink
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
+                  isActive
+                    ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
+                    : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
+                }`
+              }
+              to="/ponto"
+            >
+              <FontAwesomeIcon icon={faClock} className="w-5 h-5" />
+              <span>Ponto Maps</span>
+            </NavLink>
+          </>
+        )}
+        {(usuarioLogadoId === contabilidadeUser ||
+          usuarioLogadoId === admUser) && (
           <NavLink
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
@@ -98,6 +103,7 @@ export const Sidebar = () => {
             <span>Relatório de Ponto</span>
           </NavLink>
         )}
+
         {usuarioLogadoId === admUser && (
           <>
             <div className="flex flex-col gap-1">
@@ -227,17 +233,16 @@ export const Sidebar = () => {
                 <span>Gráfico Geográfico</span>
               </NavLink>
             </div>
-            
           </>
         )}
         <div className="flex items-center justify-center">
-              <button
-                className="bg-red-500 w-1/2 py-2 rounded-xl hover:bg-red-700 transition-all duration-200 hover:scale-105"
-                onClick={handleLogout}
-              >
-                Deslogar
-              </button>
-            </div>
+          <button
+            className="bg-red-500 w-1/2 py-2 rounded-xl hover:bg-red-700 transition-all duration-200 hover:scale-105"
+            onClick={handleLogout}
+          >
+            Deslogar
+          </button>
+        </div>
       </div>
     </div>
   );
