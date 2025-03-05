@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 export const Sidebar = () => {
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
   const admUser = "9CfoYP8HtPg7nymfGzrn8GE2NOR2";
+  const contabilidadeUser = "dS9Kyt94xiUu56Na6HEq9ZHl1V93";
   // const admUser = "mJT4AdiNCuURJsbibAPcNeMid1I3";
 
   useEffect(() => {
@@ -82,19 +83,21 @@ export const Sidebar = () => {
           <FontAwesomeIcon icon={faClock} className="w-5 h-5" />
           <span>Ponto Maps</span>
         </NavLink>
-        <NavLink
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
-              isActive
-                ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
-                : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
-            }`
-          }
-          to="/listaponto"
-        >
-          <FontAwesomeIcon icon={faClock} className="w-5 h-5" />
-          <span>Relatório de Ponto</span>
-        </NavLink>
+        {usuarioLogadoId === (contabilidadeUser && admUser) && (
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
+                isActive
+                  ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
+                  : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
+              }`
+            }
+            to="/listaponto"
+          >
+            <FontAwesomeIcon icon={faClock} className="w-5 h-5" />
+            <span>Relatório de Ponto</span>
+          </NavLink>
+        )}
         {usuarioLogadoId === admUser && (
           <>
             <div className="flex flex-col gap-1">
