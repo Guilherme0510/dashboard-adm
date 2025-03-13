@@ -30,6 +30,10 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
   const userId = auth.currentUser?.uid || "";
   const admUser = import.meta.env.VITE_ADM_USER;
 
+  const isAdmin = auth.currentUser?.uid === admUser;
+const maxYValue = isAdmin ? 500 : 150;
+
+
   useEffect(() => {
     const fetchVendasPorMes = async () => {
       // Acessa as vendas no Firestore
@@ -82,7 +86,7 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
         yScale={{
           type: "linear",
           min: "auto",
-          max: 500,
+          max: maxYValue,
           stacked: true,
         }}
         axisTop={null}
