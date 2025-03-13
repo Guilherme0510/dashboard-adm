@@ -1,6 +1,12 @@
-import { collection, getDocs, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  Timestamp,
+  where,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { db } from "../config/firebaseConfig";
+import { auth, db } from "../config/firebaseConfig";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarCheck,
@@ -55,13 +61,21 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const userId = auth.currentUser?.uid || "";
+  const admUser = import.meta.env.VITE_ADM_USER;
+
   const fetchVendas = async () => {
     try {
       setLoading(true);
 
       const vendasCollection = collection(db, "vendas");
-      const vendasSnapshot = await getDocs(vendasCollection);
+      
+      const vendasQuery =
+        userId === admUser
+          ? query(vendasCollection)
+          : query(vendasCollection, where("createdBy", "==", userId));
 
+      const vendasSnapshot = await getDocs(vendasQuery);
       const vendasList = vendasSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -94,13 +108,13 @@ export const Home = () => {
             )
               .toString()
               .padStart(2, "0")}`;
+
             if (mesesConsiderados.includes(mesAno)) {
               vendasPorMesTemp[mesAno] = (vendasPorMesTemp[mesAno] || 0) + 1;
             }
           }
         }
       });
-
       setVendasPorMes(vendasPorMesTemp);
     } catch (error) {
       setError("Erro ao buscar vendas");
@@ -113,19 +127,25 @@ export const Home = () => {
   const fetchVendasPagas = async () => {
     try {
       setLoading(true);
-
+  
       const financeiroCollection = collection(db, "financeiros");
-      const financeiroSnapshot = await getDocs(financeiroCollection);
-
+  
+      const financeiroQuery =
+        userId === admUser
+          ? query(financeiroCollection)
+          : query(financeiroCollection, where("createdBy", "==", userId));
+  
+      const financeiroSnapshot = await getDocs(financeiroQuery);
+  
       const vendasPagosList = financeiroSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Marketing[];
-
+  
       const totalPagos = vendasPagosList.filter(
         (financeiro) => financeiro.rePagamento === "sim"
       ).length;
-
+  
       setTotalVendasPagos(totalPagos);
     } catch (error) {
       setError("Erro ao buscar vendas pagas");
@@ -134,6 +154,7 @@ export const Home = () => {
       setLoading(false);
     }
   };
+  
 
   const formatarMes = (mesAno: string) => {
     const meses = [
@@ -216,6 +237,7 @@ export const Home = () => {
     fetchVendas();
     fetchVendasPagas();
     fetchTop3OperadoresDoDia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -225,7 +247,7 @@ export const Home = () => {
         <p>Bem-vindo ao seu dashboard</p>
       </div>
       <div className="flex justify-between gap-6">
-        <div className="w-[300px] h-[150px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
+        <div className="w-full h-[150px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
           <FontAwesomeIcon
             icon={faChartLine}
             className="text-yellow-400 text-4xl"
@@ -238,7 +260,7 @@ export const Home = () => {
             {error && <p className="text-red-500">{error}</p>}
           </div>
         </div>
-        <div className="w-[300px] h-[150px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
+        <div className="w-full h-[150px] bg-[#35486E] p-10 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
           <FontAwesomeIcon
             icon={faCalendarCheck}
             className="text-green-400 text-4xl"
@@ -251,7 +273,7 @@ export const Home = () => {
             {error && <p className="text-red-500">{error}</p>}
           </div>
         </div>
-        <div className="w-[300px] h-[150px] bg-[#35486E] px-10 py-2 gap-2 flex flex-col rounded-lg shadow-lg">
+        <div className="w-full h-[150px] bg-[#35486E] px-10 py-2 gap-2 flex flex-col rounded-lg shadow-lg">
           <h2 className="text-xl mb-2">Vendas por Mês:</h2>
           {loading ? (
             <p>Carregando...</p>
@@ -283,40 +305,44 @@ export const Home = () => {
           )}
           {error && <p className="text-red-500">{error}</p>}
         </div>
-        <div className="w-[300px] h-[150px] bg-[#35486E] px-7 py-2 gap-2 flex flex-col rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold text-white">Top Operadores:</h2>
+        {userId === admUser && (
+          <div className="w-full h-[150px] bg-[#35486E] px-7 py-2 gap-2 flex flex-col rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold text-white">
+              Top Operadores:
+            </h2>
 
-          {loading ? (
-            <p className="text-white">Carregando...</p>
-          ) : (
-            <ul className="text-white text-base">
-              {topOperadores.map(([operador, vendas], index) => (
-                <li
-                  key={index}
-                  className={`flex justify-between ${
-                    index === 0
-                      ? "text-yellow-400"
-                      : index === 1
-                      ? "text-blue-400"
-                      : index === 2
-                      ? "text-green-400"
-                      : ""
-                  }`}
-                >
-                  <span>
-                    {index + 1}.{" "}
-                    <span className="capitalize">
-                      {operador.replace(".", " ")}
+            {loading ? (
+              <p className="text-white">Carregando...</p>
+            ) : (
+              <ul className="text-white text-base">
+                {topOperadores.map(([operador, vendas], index) => (
+                  <li
+                    key={index}
+                    className={`flex justify-between ${
+                      index === 0
+                        ? "text-yellow-400"
+                        : index === 1
+                        ? "text-blue-400"
+                        : index === 2
+                        ? "text-green-400"
+                        : ""
+                    }`}
+                  >
+                    <span>
+                      {index + 1}.{" "}
+                      <span className="capitalize">
+                        {operador.replace(".", " ")}
+                      </span>
                     </span>
-                  </span>
-                  <span>{vendas} vendas</span>
-                </li>
-              ))}
-            </ul>
-          )}
+                    <span>{vendas} vendas</span>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-        </div>
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+          </div>
+        )}
       </div>
       <div className="flex space-x-4">
         <div className="flex-1">
@@ -324,7 +350,7 @@ export const Home = () => {
             showTopStatesLegend={false}
             mapConfig={{
               scale: 350,
-              center: [-50, -20], 
+              center: [-50, -20],
               width: 400,
               height: 350,
             }}

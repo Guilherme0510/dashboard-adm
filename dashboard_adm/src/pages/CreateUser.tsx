@@ -93,7 +93,7 @@ export const CreateUser: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 h-screen">
       <div className="mb-8">
         <h1 className="text-4xl mb-2">Criação de Usuário</h1>
         <p>Crie o seu próximo usuário</p>

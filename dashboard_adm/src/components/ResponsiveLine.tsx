@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ResponsiveLine } from "@nivo/line";
-import { db } from "../config/firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { auth, db } from "../config/firebaseConfig";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import _ from "lodash";
 
 // Definir a tipagem para os dados
@@ -27,11 +27,18 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
 }) => {
   const [dados, setDados] = useState<{ id: string; data: VendaPorMes[] }[]>([]);
 
+  const userId = auth.currentUser?.uid || "";
+  const admUser = import.meta.env.VITE_ADM_USER;
+
   useEffect(() => {
     const fetchVendasPorMes = async () => {
       // Acessa as vendas no Firestore
       const vendasCollection = collection(db, "vendas");
-      const vendasSnapshot = await getDocs(vendasCollection);
+      const vendasQuery =
+        userId === admUser
+          ? query(vendasCollection)
+          : query(vendasCollection, where("createdBy", "==", userId));
+      const vendasSnapshot = await getDocs(vendasQuery);
       const vendasData: Venda[] = vendasSnapshot.docs.map(
         (doc) => doc.data() as Venda
       );

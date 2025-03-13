@@ -1,11 +1,12 @@
 import {
-  faChartBar,
+  // faChartBar,
   faChartLine,
-  faChartPie,
+  // faChartPie,
+  faChartSimple,
   faClock,
-  faFileAlt,
+  // faFileAlt,
   faGlobe,
-  faQuestionCircle,
+  // faQuestionCircle,
   faTachometerAlt,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
@@ -18,9 +19,8 @@ import { useEffect, useState } from "react";
 
 export const Sidebar = () => {
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
-  const admUser = "9CfoYP8HtPg7nymfGzrn8GE2NOR2";
+  const admUser = import.meta.env.VITE_ADM_USER;
   const contabilidadeUser = "dS9Kyt94xiUu56Na6HEq9ZHl1V93";
-  // const admUser = "mJT4AdiNCuURJsbibAPcNeMid1I3";
 
   useEffect(() => {
     const auth = getAuth();
@@ -45,11 +45,11 @@ export const Sidebar = () => {
   return (
     <div className="flex flex-col items-center text-white">
       <div className="mt-5 flex flex-col items-center text-center">
-        <img
+        {/* <img
           src="/kaio.png"
           alt="Imagem Fictícia"
           className="w-[120px] h-[150px] rounded-full"
-        />
+        /> */}
         <div className="mt-4">
           <h2 className="text-xl capitalize">{nome.replace(".", " ")}</h2>
           <h2 className="text-md">{cargo}</h2>
@@ -84,6 +84,21 @@ export const Sidebar = () => {
             >
               <FontAwesomeIcon icon={faClock} className="w-5 h-5" />
               <span>Ponto Maps</span>
+            </NavLink>
+            <NavLink
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
+                  isActive
+                    ? "text-[#4F87F7] scale-110 border-l-4 border-[#4F87F7] shadow-lg"
+                    : "text-gray-300 hover:bg-gray-600 hover:text-white hover:scale-110 hover:border-l-4 hover:border-[#4F87F7] hover:shadow-lg"
+                }`
+              }
+              to="https://grupomapscartaodigital.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FontAwesomeIcon icon={faChartSimple} className="w-5 h-5" />
+              <span>Controle CRM</span>
             </NavLink>
           </>
         )}
@@ -121,7 +136,7 @@ export const Sidebar = () => {
                 <FontAwesomeIcon icon={faUsers} className="w-5 h-5" />
                 <span>Administrar Usuários</span>
               </NavLink>
-              <NavLink
+              {/* <NavLink
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
                     isActive
@@ -146,7 +161,7 @@ export const Sidebar = () => {
               >
                 <FontAwesomeIcon icon={faFileAlt} className="w-5 h-5" />
                 <span>Balanço Usuários</span>
-              </NavLink>
+              </NavLink> */}
             </div>
             <div className="flex flex-col gap-1">
               <p className="font-semibold text-lg">Páginas</p>
@@ -164,7 +179,7 @@ export const Sidebar = () => {
                 <span>Criar usuário</span>
               </NavLink>
 
-              <NavLink
+              {/* <NavLink
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
                     isActive
@@ -176,11 +191,11 @@ export const Sidebar = () => {
               >
                 <FontAwesomeIcon icon={faQuestionCircle} className="w-5 h-5" />
                 <span>Chamados</span>
-              </NavLink>
+              </NavLink> */}
             </div>
             <div className="flex flex-col gap-1">
               <p className="font-semibold text-lg">Gráficos</p>
-              <NavLink
+              {/* <NavLink
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
                     isActive
@@ -192,8 +207,8 @@ export const Sidebar = () => {
               >
                 <FontAwesomeIcon icon={faChartBar} className="w-5 h-5" />
                 <span>Gráfico de Barra</span>
-              </NavLink>
-              <NavLink
+              </NavLink> */}
+              {/* <NavLink
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
                     isActive
@@ -205,7 +220,7 @@ export const Sidebar = () => {
               >
                 <FontAwesomeIcon icon={faChartPie} className="w-5 h-5" />
                 <span>Gráfico de Pizza</span>
-              </NavLink>
+              </NavLink> */}
               <NavLink
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 transition-all duration-200 ease-in-out ${
