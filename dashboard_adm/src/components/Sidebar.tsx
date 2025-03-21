@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 export const Sidebar = () => {
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
   const admUser = import.meta.env.VITE_ADM_USER;
+  const supervisorUser = import.meta.env.VITE_SUPERVISOR_USER;
   const contabilidadeUser = "dS9Kyt94xiUu56Na6HEq9ZHl1V93";
 
   useEffect(() => {
@@ -103,6 +104,7 @@ export const Sidebar = () => {
           </>
         )}
         {(usuarioLogadoId === contabilidadeUser ||
+        usuarioLogadoId === supervisorUser ||
           usuarioLogadoId === admUser) && (
           <NavLink
             className={({ isActive }) =>

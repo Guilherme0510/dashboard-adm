@@ -71,6 +71,7 @@ export const ListaPonto = () => {
 
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
   const admUser = import.meta.env.VITE_ADM_USER;
+  const supervisorUser = import.meta.env.VITE_SUPERVISOR_USER;
 
   useEffect(() => {
     const auth = getAuth();
@@ -564,7 +565,7 @@ export const ListaPonto = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Horas trabalhadas</h2>
         <div className="flex justify-center gap-3">
-          {usuarioLogadoId === admUser && (
+        {usuarioLogadoId === admUser || usuarioLogadoId === supervisorUser && (
             <Link
               to="/faltas"
               className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600"
