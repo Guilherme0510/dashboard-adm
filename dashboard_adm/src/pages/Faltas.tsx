@@ -243,6 +243,7 @@ export const Faltas = () => {
                   value={String(formData[name as keyof FormData])}
                   onChange={handleInputChange}
                   className="p-2 rounded bg-gray-200 text-black"
+                  placeholder="00:00"
                 />
               </label>
             ))}
@@ -279,15 +280,17 @@ export const Faltas = () => {
                 value={formData.atestado}
                 onChange={handleInputChange}
                 className="p-2 rounded bg-gray-200 text-black"
+                placeholder="Link do atestado"
               />
             </label>
-            <label className="flex flex-col col-span-2">
+            <label className="flex flex-col">
               <span>Senha:</span>
               <input
                 type="password"
                 value={senha}
                 onChange={handleSenhaChange}
                 className="p-2 rounded bg-gray-200 text-black"
+                placeholder="******"
               />
             </label>
             <button

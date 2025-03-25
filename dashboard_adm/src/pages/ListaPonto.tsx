@@ -33,6 +33,7 @@ interface Ponto {
   horasExtras: string;
   atrasos: string;
   falta: boolean;
+  atestado: string;
 }
 
 interface DadosFormatados {
@@ -46,6 +47,7 @@ interface DadosFormatados {
   "Horas Extras": string;
   Atrasos: string;
   Falta: string;
+  Atestado: string | { t: string; v: string; l: { Target: string } }
 }
 
 interface ResumoMensal {
@@ -54,6 +56,7 @@ interface ResumoMensal {
   "Total de Atrasos (hh:mm)": number;
   "Total de Horas Extras (hh:mm)": number;
   "Total de Faltas": number;
+  "Total de Atestados": number;
 }
 
 export const ListaPonto = () => {
@@ -298,6 +301,9 @@ export const ListaPonto = () => {
           "Horas Extras": formatarHoraMinuto(ponto.horasExtras ?? "00:00"),
           Atrasos: formatarHoraMinuto(ponto.atrasos ?? "00:00"),
           Falta: ponto.falta ? "Sim" : "Não",
+          Atestado: ponto.atestado
+    ? { t: "s", v: "Clique aqui", l: { Target: ponto.atestado } } 
+    : ""
         })
       );
 
@@ -312,6 +318,7 @@ export const ListaPonto = () => {
         "Horas Extras": "",
         Atrasos: "",
         Falta: "",
+        Atestado: "",
       });
 
       // Calcula o resumo mensal
@@ -324,6 +331,7 @@ export const ListaPonto = () => {
               "Total de Atrasos (hh:mm)": 0,
               "Total de Horas Extras (hh:mm)": 0,
               "Total de Faltas": 0,
+              "Total de Atestados": 0, // Contabilizando os atestados
             };
           }
 
@@ -343,6 +351,7 @@ export const ListaPonto = () => {
           acc[ponto.nome]["Total de Atrasos (hh:mm)"] += atrasoMinutos;
           acc[ponto.nome]["Total de Horas Extras (hh:mm)"] += horaExtraMinutos;
           acc[ponto.nome]["Total de Faltas"] += ponto.falta ? 1 : 0;
+          acc[ponto.nome]["Total de Atestados"] += ponto.atestado ? 1 : 0; // Contabilizando os atestados
 
           return acc;
         }, {} as Record<string, ResumoMensal>)
@@ -362,19 +371,20 @@ export const ListaPonto = () => {
           }`
         );
       });
+
       // Criação das planilhas
       const wsDadosPonto = utils.json_to_sheet(dadosFormatados);
       const wsResumo = utils.json_to_sheet(resumoMensal);
 
-      // Definir o estilo do cabeçalho
+      // Estilos para o cabeçalho e células
       const headerStyle = {
         fill: {
           patternType: "solid",
-          fgColor: { rgb: "FFFF00" }, // Cor de fundo amarela
+          fgColor: { rgb: "FFFF00" },
         },
         font: {
           bold: true,
-          color: { rgb: "0000FF" }, // Cor do texto azul
+          color: { rgb: "0000FF" },
         },
         alignment: {
           horizontal: "center",
@@ -387,7 +397,6 @@ export const ListaPonto = () => {
         },
       };
 
-      // Definir o estilo das células (bordas)
       const cellStyle = {
         border: {
           top: { style: "thin", color: { rgb: "000000" } },
@@ -397,7 +406,7 @@ export const ListaPonto = () => {
         },
       };
 
-      // Aplicar o estilo ao cabeçalho
+      // Aplicar estilo ao cabeçalho
       const headerRange = utils.decode_range(wsDadosPonto["!ref"]!);
       for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
         const cellAddress = utils.encode_cell({ r: 0, c: col });
@@ -405,7 +414,7 @@ export const ListaPonto = () => {
         wsDadosPonto[cellAddress].s = headerStyle;
       }
 
-      // Aplicar bordas a todas as células
+      // Aplicar bordas
       const dataRange = utils.decode_range(wsDadosPonto["!ref"]!);
       for (let row = dataRange.s.r; row <= dataRange.e.r; row++) {
         for (let col = dataRange.s.c; col <= dataRange.e.c; col++) {
@@ -418,7 +427,7 @@ export const ListaPonto = () => {
         }
       }
 
-      // Aplicar o estilo ao cabeçalho do resumo mensal
+      // Aplicar estilo ao cabeçalho do resumo
       const headerRangeResumo = utils.decode_range(wsResumo["!ref"]!);
       for (
         let col = headerRangeResumo.s.c;
@@ -430,7 +439,7 @@ export const ListaPonto = () => {
         wsResumo[cellAddress].s = headerStyle;
       }
 
-      // Aplicar bordas a todas as células do resumo mensal
+      // Aplicar bordas no resumo mensal
       const dataRangeResumo = utils.decode_range(wsResumo["!ref"]!);
       for (let row = dataRangeResumo.s.r; row <= dataRangeResumo.e.r; row++) {
         for (let col = dataRangeResumo.s.c; col <= dataRangeResumo.e.c; col++) {
@@ -455,6 +464,7 @@ export const ListaPonto = () => {
         { wch: 15 }, // Horas Extras
         { wch: 15 }, // Atrasos
         { wch: 10 }, // Falta
+        { wch: 15 }, // Atestado (Novo)
       ];
 
       wsResumo["!cols"] = [
@@ -463,13 +473,14 @@ export const ListaPonto = () => {
         { wch: 15 }, // Total de Atrasos
         { wch: 15 }, // Total de Horas Extras
         { wch: 15 }, // Total de Faltas
+        { wch: 15 }, // Total de Atestados (Novo)
       ];
 
-      // Adiciona o filtro automático
-      wsDadosPonto["!autofilter"] = { ref: "A1:J1" }; // Define a faixa de filtro na planilha de dados
-      wsResumo["!autofilter"] = { ref: "A1:E1" }; // Define a faixa de filtro na planilha de resumo
+      // Adicionar filtro automático
+      wsDadosPonto["!autofilter"] = { ref: "A1:K1" }; // Coluna adicional para o atestado
+      wsResumo["!autofilter"] = { ref: "A1:F1" };
 
-      // Criar e salvar o arquivo
+      // Criar e salvar o arquivo XLSX
       const wb = utils.book_new();
       utils.book_append_sheet(wb, wsDadosPonto, "Dados Ponto Gerais");
       utils.book_append_sheet(wb, wsResumo, "Resumo Mensal");
@@ -478,6 +489,32 @@ export const ListaPonto = () => {
     } catch (error) {
       console.error("Erro ao exportar para XLSX:", error);
     }
+  };
+
+  const convertDateToTimestamp = async () => {
+    const usuariosRef = collection(db, "pontos");
+    const snapshot = await getDocs(usuariosRef);
+
+    snapshot.forEach(async (docSnapshot) => {
+      const data = docSnapshot.data();
+
+      if (data.dia && typeof data.dia === "string") {
+        const [dia, mes, ano] = data.dia.split("/");
+
+        const dateObj = new Date(`${ano}-${mes}-${dia}T09:53:14-03:00`);
+
+        const timestamp = Timestamp.fromDate(dateObj);
+
+        const docRef = doc(db, "pontos", docSnapshot.id);
+        await updateDoc(docRef, { dia: timestamp });
+
+        console.log(
+          `Documento ${docSnapshot.id} atualizado com timestamp do Firestore!`
+        );
+      }
+    });
+
+    console.log("Conversão finalizada!");
   };
 
   const abrirModal = (ponto: any) => {
@@ -565,7 +602,8 @@ export const ListaPonto = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Horas trabalhadas</h2>
         <div className="flex justify-center gap-3">
-        {usuarioLogadoId === admUser || usuarioLogadoId === supervisorUser && (
+          {(usuarioLogadoId === admUser ||
+            usuarioLogadoId === supervisorUser) && (
             <Link
               to="/faltas"
               className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600"
@@ -573,11 +611,18 @@ export const ListaPonto = () => {
               Horário Manual
             </Link>
           )}
+
           <button
             onClick={() => exportarParaXLS(dadosFiltrados)}
             className="bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
           >
             Download XLS
+          </button>
+          <button
+            onClick={() => convertDateToTimestamp()}
+            className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600"
+          >
+            Arrumar datas
           </button>
         </div>
       </div>
