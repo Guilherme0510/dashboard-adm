@@ -31,12 +31,11 @@ const ResponsiveLineChart: React.FC<ResponsiveLineChartProps> = ({
   const admUser = import.meta.env.VITE_ADM_USER;
 
   const isAdmin = auth.currentUser?.uid === admUser;
-const maxYValue = isAdmin ? 500 : 150;
+const maxYValue = isAdmin ? 600 : 150;
 
 
   useEffect(() => {
     const fetchVendasPorMes = async () => {
-      // Acessa as vendas no Firestore
       const vendasCollection = collection(db, "vendas");
       const vendasQuery =
         userId === admUser
@@ -49,8 +48,9 @@ const maxYValue = isAdmin ? 500 : 150;
 
       // Agrupa as vendas por mês e ano
       const vendasAgrupadas = _.groupBy(vendasData, (venda) => {
-        const date = new Date(venda.data);
-        const mesAno = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        const date = new Date(`${venda.data}T12:00:00`);
+
+        const mesAno = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
         return mesAno;
       });
 
@@ -69,6 +69,9 @@ const maxYValue = isAdmin ? 500 : 150;
           };
         }
       );
+      console.log("Vendas Agrupadas:", vendasAgrupadas);
+console.log("Vendas Por Mês:", vendasPorMes);
+
       const vendasOrdenadas = _.orderBy(vendasPorMes, ["x"], ["asc"]);
 
       setDados([{ id: "Vendas", data: vendasOrdenadas }]);
@@ -85,7 +88,7 @@ const maxYValue = isAdmin ? 500 : 150;
         xScale={{ type: "point" }}
         yScale={{
           type: "linear",
-          min: "auto",
+          min: 100,
           max: maxYValue,
           stacked: true,
         }}

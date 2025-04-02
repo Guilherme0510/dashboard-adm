@@ -69,7 +69,7 @@ export const Home = () => {
       setLoading(true);
 
       const vendasCollection = collection(db, "vendas");
-      
+
       const vendasQuery =
         userId === admUser
           ? query(vendasCollection)
@@ -95,12 +95,20 @@ export const Home = () => {
         return `${data.getFullYear()}-${mes}`;
       });
 
+      console.log(mesesConsiderados);
+
       vendasList.forEach((venda) => {
         if (venda.data) {
           const dataVenda =
             venda.data instanceof Timestamp
               ? venda.data.toDate()
-              : new Date(venda.data);
+              : typeof venda.data === "string"
+              ? new Date(
+                  venda.data.includes("T")
+                    ? venda.data
+                    : `${venda.data}T00:00:00`
+                )
+              : null;
 
           if (dataVenda) {
             const mesAno = `${dataVenda.getFullYear()}-${(
@@ -127,25 +135,25 @@ export const Home = () => {
   const fetchVendasPagas = async () => {
     try {
       setLoading(true);
-  
+
       const financeiroCollection = collection(db, "financeiros");
-  
+
       const financeiroQuery =
         userId === admUser
           ? query(financeiroCollection)
           : query(financeiroCollection, where("createdBy", "==", userId));
-  
+
       const financeiroSnapshot = await getDocs(financeiroQuery);
-  
+
       const vendasPagosList = financeiroSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Marketing[];
-  
+
       const totalPagos = vendasPagosList.filter(
         (financeiro) => financeiro.rePagamento === "sim"
       ).length;
-  
+
       setTotalVendasPagos(totalPagos);
     } catch (error) {
       setError("Erro ao buscar vendas pagas");
@@ -154,7 +162,6 @@ export const Home = () => {
       setLoading(false);
     }
   };
-  
 
   const formatarMes = (mesAno: string) => {
     const meses = [
