@@ -423,6 +423,8 @@ export const AdmUsers = () => {
                   <option value="cobranca">Cobrança</option>
                   <option value="financeiro">Financeiro</option>
                   <option value="marketing">Marketing</option>
+                  <option value="posVenda">Pós Venda</option>
+                  <option value="Dev">Dev</option>
                 </select>
               </div>
             </div>
