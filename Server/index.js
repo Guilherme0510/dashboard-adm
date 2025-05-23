@@ -25,13 +25,16 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 app.options('*', cors(corsOptions));
-
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+// Rota raiz para teste simples
+app.get('/', (req, res) => {
+  res.send('API funcionando');
+});
 
+// Rotas da API
 app.use('/api', userRouter);
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
