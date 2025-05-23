@@ -23,6 +23,7 @@ import { db } from "../config/firebaseConfig";
 import { Value } from "react-calendar/dist/esm/shared/types.js";
 import Popup from "reactjs-popup";
 import "reactjs-popup/dist/index.css";
+import { Loader2 } from "lucide-react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -48,9 +49,10 @@ export const Ponto = () => {
   const [, setDadosDoDia] = useState<any | null>(null);
   const [botaoDesabilitado, setBotaoDesabilitado] = useState(false);
   const [mostrarPopup, setMostrarPopup] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const [   tempoRestante, setTempoRestante] = useState(5);
+  const [tempoRestante, setTempoRestante] = useState(5);
   const TEMPO_COOLDOWN = 5;
 
   const MAX_CLIQUES = 4;
@@ -157,7 +159,6 @@ export const Ponto = () => {
   }, [intervaloCliques, cargaHoraria]);
 
   const baterPonto = async () => {
-
     if (botaoDesabilitado) return;
 
     setBotaoDesabilitado(true);
@@ -232,6 +233,7 @@ export const Ponto = () => {
 
   useEffect(() => {
     const carregarPontos = async () => {
+      setLoading(true);
       const dataId = dataSelecionada.toISOString().split("T")[0];
       const nomeUsuario = nome.replace(/\s+/g, "_");
       const documentoId = `${nomeUsuario}-${dataId}`;
@@ -252,6 +254,7 @@ export const Ponto = () => {
         setRegistrosPonto(pontosExistentes);
         setCliquesPonto(pontosExistentes.length);
       }
+      setLoading(false);
     };
 
     carregarPontos();
@@ -338,20 +341,20 @@ export const Ponto = () => {
   };
 
   useEffect(() => {
-  if (botaoDesabilitado) {
-    const intervalo = setInterval(() => {
-      setTempoRestante((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalo);
-          setBotaoDesabilitado(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 60 * 1000); // Atualiza a cada 1 minuto
+    if (botaoDesabilitado) {
+      const intervalo = setInterval(() => {
+        setTempoRestante((prev) => {
+          if (prev <= 1) {
+            clearInterval(intervalo);
+            setBotaoDesabilitado(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 60 * 1000); // Atualiza a cada 1 minuto
 
-    return () => clearInterval(intervalo);
-  }
+      return () => clearInterval(intervalo);
+    }
   }, [botaoDesabilitado]);
 
   useEffect(() => {
@@ -381,7 +384,6 @@ export const Ponto = () => {
         <h1 className="text-4xl mb-2">Ponto Maps</h1>
         <p>Bata seu ponto</p>
       </div>
-
       <div className="flex flex-wrap gap-6">
         <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-center justify-center rounded-lg shadow-lg">
           <div className="mb-4 text-xl font-bold">{horaAtual}</div>
@@ -394,16 +396,24 @@ export const Ponto = () => {
           </div>
           <h2 className="text-xl capitalize mt-2">{nome.replace(".", " ")}</h2>
           <button
-    className={`mt-4 px-6 py-2 font-bold rounded-lg shadow ${
-      botaoDesabilitado
-        ? "bg-gray-500 cursor-not-allowed"
-        : "bg-green-500 hover:bg-green-600"
-    }`}
-    onClick={baterPonto}
-    disabled={botaoDesabilitado}
-  >
-    {botaoDesabilitado ? `Aguarde ${tempoRestante}m` : "Bater o Ponto"}
-  </button>
+            className={`mt-4 px-6 py-2 font-bold rounded-lg shadow flex items-center justify-center gap-2 ${
+              botaoDesabilitado || loading
+                ? "bg-gray-500 cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-600"
+            }`}
+            onClick={baterPonto}
+            disabled={botaoDesabilitado || loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+              </>
+            ) : botaoDesabilitado ? (
+              `Aguarde ${tempoRestante}m`
+            ) : (
+              "Bater o Ponto"
+            )}
+          </button>
         </div>
 
         <div className="flex-grow min-w-[300px] max-w-lg bg-[#35486E] p-6 gap-2 flex flex-col items-start justify-start rounded-lg shadow-lg">
@@ -417,12 +427,22 @@ export const Ponto = () => {
             ))}
           </ul>
           <ul className="text-lg">
-            {registrosPonto.map((horario, index) => (
-              <li key={index} className="flex justify-between w-full">
-                <span className="font-semibold">Ponto {index + 1}:</span>
-                <span>{horario}</span>
+            {loading ? (
+              <li className="flex justify-center w-full py-2">
+                <Loader2 className="w-5 h-5 animate-spin text-white" />
               </li>
-            ))}
+            ) : registrosPonto.length > 0 ? (
+              registrosPonto.map((horario, index) => (
+                <li key={index} className="flex justify-between w-full">
+                  <span className="font-semibold">Ponto {index + 1}:</span>
+                  <span>{horario}</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-center w-full py-2 text-gray-300">
+                Nenhum ponto registrado
+              </li>
+            )}
           </ul>
         </div>
 

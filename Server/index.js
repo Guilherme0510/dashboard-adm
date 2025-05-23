@@ -6,13 +6,27 @@ import { userRouter } from './routes/userRoutes.js';
 dotenv.config();
 const app = express();
 
+const allowedOrigins = [
+  "https://dashboard-adm-front-end.vercel.app",
+  "http://localhost:3000",  // ajuste a porta conforme seu frontend local
+  "http://localhost:5173",  // exemplo para Vite
+];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "https://dashboard-adm-front-end.vercel.app",
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true); // libera
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-console.log("CORS Config:", corsOptions); // Adiciona um log para verificar a configuração
+console.log("CORS Config:", corsOptions);
 
 app.use(cors(corsOptions));
 

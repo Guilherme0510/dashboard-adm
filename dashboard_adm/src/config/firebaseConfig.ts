@@ -19,6 +19,14 @@ const firebaseConfig = {
   // messagingSenderId: "861061406484",
   // appId: "1:861061406484:web:626c360a227d0befd96c01",
   // measurementId: "G-XRE4YMX1GW"
+
+  // apiKey: "AIzaSyAJeF8VtrPYFJhYFtm1n4sj_NXLrcP8t_g",
+  // authDomain: "crm-tfgestao.firebaseapp.com",
+  // projectId: "crm-tfgestao",
+  // storageBucket: "crm-tfgestao.firebasestorage.app",
+  // messagingSenderId: "214326679546",
+  // appId: "1:214326679546:web:5102847e9f1ad98d7e7643",
+  // measurementId: "G-L9QS3K0R1S"
 };
 
 

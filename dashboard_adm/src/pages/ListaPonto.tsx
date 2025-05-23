@@ -47,7 +47,7 @@ interface DadosFormatados {
   "Horas Extras": string;
   Atrasos: string;
   Falta: string;
-  Atestado: string | { t: string; v: string; l: { Target: string } }
+  Atestado: string | { t: string; v: string; l: { Target: string } };
 }
 
 interface ResumoMensal {
@@ -118,20 +118,21 @@ export const ListaPonto = () => {
     fetchDados();
   }, [dataInicio, dataFim]);
 
-  // const excluirPonto = async (id: any) => {
-  //   try {
-  //     await deleteDoc(doc(db, "pontos", id));
-  //     console.log("Ponto excluído com sucesso!");
-  //     setDadosPonto((prevDados) =>
-  //       prevDados.filter((ponto) => ponto.id !== id)
-  //     );
-  //   } catch (error) {
-  //     console.error("Erro ao excluir ponto:", error);
-  //   }
-  // };
-
   useEffect(() => {
     if (!dadosPonto.length) return;
+
+    const dadosValidos = dadosPonto.filter((ponto) => {
+      if (!ponto.nome || ponto.nome.trim() === "") return false;
+
+      const pontos = [
+        ponto.pontoEntrada,
+        ponto.pontoAlmoco,
+        ponto.pontoVolta,
+        ponto.pontoSaida,
+      ];
+      const temPontoValido = pontos.some((p) => p && p.trim() !== "");
+      return temPontoValido;
+    });
 
     const calcularAtrasoEHoraExtra = async () => {
       try {
@@ -206,8 +207,8 @@ export const ListaPonto = () => {
           return { atraso, horasExtras };
         };
 
-        const novosDadosPonto = dadosPonto.map((ponto) => {
-          const horariosEsperados = horariosUsuarios[ponto.nome];
+        const novosDadosPonto = dadosValidos.map((ponto) => {
+          const horariosEsperados = horariosUsuarios[ponto.nome] || {};
           const criarData = (hora: any) => {
             const [horaParte, minutoParte] = hora
               .split(":")
@@ -227,6 +228,7 @@ export const ListaPonto = () => {
           const saidaReal = ponto.pontoSaida
             ? criarData(ponto.pontoSaida)
             : null;
+
           const entradaEsperada = horariosEsperados.primeiroPonto
             ? criarData(horariosEsperados.primeiroPonto)
             : null;
@@ -302,8 +304,8 @@ export const ListaPonto = () => {
           Atrasos: formatarHoraMinuto(ponto.atrasos ?? "00:00"),
           Falta: ponto.falta ? "Sim" : "Não",
           Atestado: ponto.atestado
-    ? { t: "s", v: "Clique aqui", l: { Target: ponto.atestado } } 
-    : ""
+            ? { t: "s", v: "Clique aqui", l: { Target: ponto.atestado } }
+            : "",
         })
       );
 
