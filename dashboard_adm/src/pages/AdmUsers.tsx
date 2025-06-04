@@ -534,9 +534,9 @@ export const AdmUsers = () => {
                 className="border border-gray-300 p-2 rounded w-full mb-4"
               >
                 <option value="">{editUserData.equipe_msg}</option>
-                <option value="equipe_01">equipe_01</option>
-                <option value="equipe_02">equipe_02</option>
-                <option value="equipe_03">equipe_03</option>
+                <option value="equipe_6110">equipe_6110</option>
+                <option value="equipe_2535">equipe_2535</option>
+                <option value="equipe_9272">equipe_9272</option>
               </select>
             </div>
 

@@ -236,14 +236,14 @@ export const CreateUser: React.FC = () => {
             required
           >
             <option value="Selecione a equipe">Selecione a equipe</option>
-            <option className="text-black" value="equipe_01">
-              equipe_01
+            <option className="text-black" value="equipe_6110">
+              equipe_6110
             </option>
-            <option className="text-black" value="equipe_02">
-              equipe_02
+            <option className="text-black" value="equipe_2535">
+              equipe_2535
             </option>
-            <option className="text-black" value="equipe_03">
-              equipe_03
+            <option className="text-black" value="equipe_9272">
+              equipe_9272
             </option>
           </select>
         </div>
