@@ -35,12 +35,13 @@ export const AdmUsers = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [, setSortField] = useState<keyof User | null>(null);
+  const [sortField, setSortField] = useState<keyof User | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newCargo, setNewCargo] = useState("");
   const [newEquipe_msg, setNewEquipe_msg] = useState("");
   const [modalEdit, setModalEdit] = useState(false);
   const [editUserData, setEditUserData] = useState<User | null>(null);
+  const [disabledFilter, setDisabledFilter] = useState<null | boolean>(null);
 
   const backendUrl = import.meta.env.VITE_BACKEND;
 
@@ -205,18 +206,30 @@ export const AdmUsers = () => {
     }
   };
 
-  const sortData = (field: keyof User) => {
+  const sortAndFilterData = (
+    field: keyof User,
+    currentDisabledFilter: boolean | null = disabledFilter
+  ) => {
     const newOrder = sortOrder === "asc" ? "desc" : "asc";
     setSortOrder(newOrder);
     setSortField(field);
 
-    const sortedUsers = [...filteredUsers].sort((a, b) => {
-      const valueA = String(a[field] || "");
-      const valueB = String(b[field] || "");
+    let usersToSort = [...users];
+    if (currentDisabledFilter !== null) {
+      usersToSort = usersToSort.filter(
+        (user) => user.disabled === currentDisabledFilter
+      );
+    }
+
+    const sortedUsers = usersToSort.sort((a, b) => {
+      const valueA = String(a[field] ?? "");
+      const valueB = String(b[field] ?? "");
+
       return newOrder === "asc"
         ? valueA.localeCompare(valueB)
         : valueB.localeCompare(valueA);
     });
+
     setFilteredUsers(sortedUsers);
   };
 
@@ -264,7 +277,7 @@ export const AdmUsers = () => {
               <tr className="bg-[#4F87F7]">
                 <th
                   className="p-2 text-left flex items-center gap-2 cursor-pointer"
-                  onClick={() => sortData("nome")}
+                  onClick={() => sortAndFilterData("nome")}
                 >
                   Nome
                   <FontAwesomeIcon icon={faUpDown} data-tooltip-id="icon" />
@@ -273,12 +286,33 @@ export const AdmUsers = () => {
                 <th className="p-2 text-left">Email</th>
                 <th
                   className="p-2 text-left flex items-center gap-2 cursor-pointer"
-                  onClick={() => sortData("cargo")}
+                  onClick={() => sortAndFilterData("cargo")}
                 >
                   Cargo
                   <FontAwesomeIcon icon={faUpDown} data-tooltip-id="icon" />
                 </th>
-                <th></th>
+                <th className="p-2 text-left">
+                  <select
+                    className="bg-white text-black rounded p-1 text-sm"
+                    value={
+                      disabledFilter === null
+                        ? ""
+                        : disabledFilter
+                        ? "true"
+                        : "false"
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const newFilter = value === "" ? null : value === "true";
+                      setDisabledFilter(newFilter);
+                      sortAndFilterData(sortField ?? "nome", newFilter); // mantém a ordenação atual
+                    }}
+                  >
+                    <option value="">Todos</option>
+                    <option value="false">Ativos</option>
+                    <option value="true">Desativados</option>
+                  </select>
+                </th>
                 <th></th>
                 <th></th>
               </tr>
