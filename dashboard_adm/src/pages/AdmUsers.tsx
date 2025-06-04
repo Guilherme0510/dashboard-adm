@@ -27,6 +27,7 @@ interface User {
   segundoPonto: string;
   terceiroPonto: string;
   quartoPonto: string;
+  equipe_msg: string;
 }
 
 export const AdmUsers = () => {
@@ -37,6 +38,7 @@ export const AdmUsers = () => {
   const [, setSortField] = useState<keyof User | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newCargo, setNewCargo] = useState("");
+  const [newEquipe_msg, setNewEquipe_msg] = useState("");
   const [modalEdit, setModalEdit] = useState(false);
   const [editUserData, setEditUserData] = useState<User | null>(null);
 
@@ -78,12 +80,13 @@ export const AdmUsers = () => {
   };
 
   const handleSaveEdit = async () => {
-    if (editUserData || (selectedUser && newCargo)) {
+    if (editUserData || (selectedUser && newCargo) || (selectedUser && newEquipe_msg)) {
       try {
         if (editUserData) {
           const updatedUser = {
             ...editUserData,
             cargo: newCargo || editUserData.cargo,
+            equipe_msg: newEquipe_msg || editUserData.equipe_msg,
           };
 
           const userRef = doc(db, "usuarios", updatedUser.id);
@@ -95,6 +98,7 @@ export const AdmUsers = () => {
             segundoPonto: updatedUser.segundoPonto,
             terceiroPonto: updatedUser.terceiroPonto,
             quartoPonto: updatedUser.quartoPonto,
+            equipe_msg: updatedUser.equipe_msg,
           });
 
           setUsers((prev) =>
@@ -128,6 +132,23 @@ export const AdmUsers = () => {
           );
           setSelectedUser(null);
           setNewCargo("");
+        }
+        if (selectedUser && newEquipe_msg) {
+          const userRef = doc(db, "usuarios", selectedUser.id);
+          await updateDoc(userRef, { equipe_msg: newEquipe_msg });
+
+          setUsers((prev) =>
+            prev.map((user) =>
+              user.id === selectedUser.id ? { ...user, equipe_msg: newEquipe_msg } : user
+            )
+          );
+          setFilteredUsers((prev) =>
+            prev.map((user) =>
+              user.id === selectedUser.id ? { ...user, equipe_msg: newEquipe_msg } : user
+            )
+          );
+          setSelectedUser(null);
+          setNewEquipe_msg("");
         }
       } catch (error: any) {
         console.error("Erro ao salvar as alterações:", error);
@@ -483,6 +504,21 @@ export const AdmUsers = () => {
                 />
               </div>
             </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Equipe
+                </label>
+                <select
+                  value={newEquipe_msg}
+                  onChange={(e) => setNewEquipe_msg(e.target.value)}
+                  className="border border-gray-300 p-2 rounded w-full mb-4"
+                >
+                  <option value="">{editUserData.equipe_msg}</option>
+                  <option value="equipe_01">equipe_01</option>
+                  <option value="equipe_02">equipe_02</option>
+                  <option value="equipe_03">equipe_03</option>
+                </select>
+              </div>
 
             {/* Botões de ação */}
             <div className="flex justify-end gap-2">

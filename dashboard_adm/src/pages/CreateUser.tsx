@@ -15,6 +15,7 @@ interface FormData {
   segundoPonto: string;
   terceiroPonto: string;
   quartoPonto: string;
+  equipe_msg: string;
 }
 
 export const CreateUser: React.FC = () => {
@@ -28,6 +29,7 @@ export const CreateUser: React.FC = () => {
     terceiroPonto: "",
     quartoPonto: "",
     disabled: false,
+    equipe_msg: "",
   });
   const [message, setMessage] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +53,10 @@ export const CreateUser: React.FC = () => {
       setMessage("Por favor, selecione um cargo.");
       return;
     }
+    if (!formData.equipe_msg) {
+      setMessage("Por favor, selecione uma equipe.");
+      return;
+    }
 
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -68,6 +74,7 @@ export const CreateUser: React.FC = () => {
         segundoPonto: formData.segundoPonto,
         terceiroPonto: formData.terceiroPonto,
         quartoPonto: formData.quartoPonto,
+        equipe_msg: formData.equipe_msg,
         createdAt: new Date().toISOString(),
         disabled: formData.disabled,
       });
@@ -83,6 +90,7 @@ export const CreateUser: React.FC = () => {
         terceiroPonto: "",
         quartoPonto: "",
         disabled: false,
+        equipe_msg: "",
       });
       toast.success("Usuário criado com sucesso");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,6 +223,27 @@ export const CreateUser: React.FC = () => {
             </option>
             <option className="text-black" value="financeiro">
               Financeiro
+            </option>
+          </select>
+        </div>
+        <div className="relative">
+          <select
+            id="equipe_msg"
+            name="equipe_msg"
+            value={formData.equipe_msg}
+            onChange={handleChange}
+            className="mt-1 block w-full p-3 bg-gray-500 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
+          >
+            <option value="Selecione a equipe">Selecione a equipe</option>
+            <option className="text-black" value="equipe_01">
+              equipe_01
+            </option>
+            <option className="text-black" value="equipe_02">
+              equipe_02
+            </option>
+            <option className="text-black" value="equipe_03">
+              equipe_03
             </option>
           </select>
         </div>
