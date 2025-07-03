@@ -18,8 +18,6 @@ import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { writeFile } from "xlsx-js-style";
 import { EditPonto } from "../components/EditPonto";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 interface Ponto {
   id: null | undefined;
@@ -499,20 +497,47 @@ export const ListaPonto = () => {
 
     snapshot.forEach(async (docSnapshot) => {
       const data = docSnapshot.data();
+      const docRef = doc(db, "pontos", docSnapshot.id);
 
-      if (data.dia && typeof data.dia === "string") {
-        const [dia, mes, ano] = data.dia.split("/");
+      if (data.dia && typeof data.dia === "string" && data.dia.includes("/")) {
+        const partes = data.dia.split("/");
+        if (partes.length === 3) {
+          let [p1, p2, ano] = partes; // Remove espaços e força números
 
-        const dateObj = new Date(`${ano}-${mes}-${dia}T09:53:14-03:00`);
+          p1 = p1.trim();
+          p2 = p2.trim();
+          ano = ano.trim(); // Determinar formato: se o segundo número > 12, então é dia (formato americano)
 
-        const timestamp = Timestamp.fromDate(dateObj);
+          let dia: string;
+          let mes: string;
 
-        const docRef = doc(db, "pontos", docSnapshot.id);
-        await updateDoc(docRef, { dia: timestamp });
+          if (parseInt(p2) > 12) {
+            mes = p1.padStart(2, "0");
+            dia = p2.padStart(2, "0");
+          } else {
+            dia = p1.padStart(2, "0");
+            mes = p2.padStart(2, "0");
+          }
 
-        console.log(
-          `Documento ${docSnapshot.id} atualizado com timestamp do Firestore!`
-        );
+          const dateString = `${ano}-${mes}-${dia}T09:53:14-03:00`;
+          const dateObj = new Date(dateString);
+
+          if (!isNaN(dateObj.getTime())) {
+            const timestamp = Timestamp.fromDate(dateObj);
+            await updateDoc(docRef, { dia: timestamp });
+            console.log(
+              `✅ Documento ${docSnapshot.id} atualizado com timestamp!`
+            );
+          } else {
+            console.warn(
+              `❌ Data inválida em documento ${docSnapshot.id}: ${data.dia}`
+            );
+          }
+        } else {
+          console.warn(
+            `❌ Formato inesperado de data em documento ${docSnapshot.id}: ${data.dia}`
+          );
+        }
       }
     });
 
