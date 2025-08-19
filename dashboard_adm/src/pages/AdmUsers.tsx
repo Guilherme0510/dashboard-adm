@@ -89,7 +89,8 @@ export const AdmUsers = () => {
           ...editUserData,
           cargo: newCargo || editUserData.cargo,
           equipe_msg: newEquipe_msg || editUserData.equipe_msg,
-          equipe_supervisor: newEquipe_supervisor || editUserData.equipe_supervisor,
+          equipe_supervisor:
+            newEquipe_supervisor || editUserData.equipe_supervisor,
         };
 
         const userRef = doc(db, "usuarios", updatedUser.id);
@@ -120,7 +121,8 @@ export const AdmUsers = () => {
         const updatedFields: Partial<User> = {};
         if (newCargo) updatedFields.cargo = newCargo;
         if (newEquipe_msg) updatedFields.equipe_msg = newEquipe_msg;
-        if (newEquipe_supervisor) updatedFields.equipe_supervisor = newEquipe_supervisor;
+        if (newEquipe_supervisor)
+          updatedFields.equipe_supervisor = newEquipe_supervisor;
 
         if (Object.keys(updatedFields).length > 0) {
           const userRef = doc(db, "usuarios", selectedUser.id);
@@ -545,16 +547,19 @@ export const AdmUsers = () => {
                 <option value="equipe_9272">equipe_9272</option>
               </select>
             </div>
-             <div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Equipe
               </label>
               <select
-                value={newEquipe_supervisor}
-                onChange={(e) => setNewEquipe_supervisor(e.target.value)}
+                value={editUserData?.equipe_supervisor || ""}
+                onChange={(e) =>
+                  setEditUserData((prev) =>
+                    prev ? { ...prev, equipe_supervisor: e.target.value } : prev
+                  )
+                }
                 className="border border-gray-300 p-2 rounded w-full mb-4"
               >
-                <option value="">{editUserData.equipe_supervisor}</option>
                 <option value="equipe_frank">Equipe Frank</option>
                 <option value="equipe_antiga">Equipe Antiga</option>
                 <option value="equipe_ricardo">Equipe Ricardo</option>
