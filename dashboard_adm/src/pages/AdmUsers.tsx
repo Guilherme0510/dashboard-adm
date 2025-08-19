@@ -556,7 +556,7 @@ export const AdmUsers = () => {
               >
                 <option value="">{editUserData.equipe_supervisor}</option>
                 <option value="equipe_frank">Equipe Frank</option>
-                <option value="equipe_aguia">Equipe Águia</option>
+                <option value="equipe_antiga">Equipe Antiga</option>
                 <option value="equipe_ricardo">Equipe Ricardo</option>
               </select>
             </div>
