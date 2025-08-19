@@ -16,6 +16,7 @@ interface FormData {
   terceiroPonto: string;
   quartoPonto: string;
   equipe_msg: string;
+  equipe_supervisor: string;
 }
 
 export const CreateUser: React.FC = () => {
@@ -30,6 +31,7 @@ export const CreateUser: React.FC = () => {
     quartoPonto: "",
     disabled: false,
     equipe_msg: "",
+    equipe_supervisor: "",
   });
   const [message, setMessage] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
@@ -91,6 +93,7 @@ export const CreateUser: React.FC = () => {
         quartoPonto: "",
         disabled: false,
         equipe_msg: "",
+        equipe_supervisor: "",
       });
       toast.success("Usuário criado com sucesso");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -244,6 +247,27 @@ export const CreateUser: React.FC = () => {
             </option>
             <option className="text-black" value="equipe_9272">
               equipe_9272
+            </option>
+          </select>
+        </div>
+         <div className="relative">
+          <select
+            id="equipe_supervisor"
+            name="equipe_supervisor"
+            value={formData.equipe_supervisor}
+            onChange={handleChange}
+            className="mt-1 block w-full p-3 bg-gray-500 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
+          >
+            <option value="Selecione a equipe">Selecione a equipe de vendas</option>
+            <option className="text-black" value="equipe_frank">
+              Equipe Frank
+            </option>
+            <option className="text-black" value="equipe_aguia">
+              Equipe Águia
+            </option>
+            <option className="text-black" value="equipe_ricardo">
+              Equipe Ricardo
             </option>
           </select>
         </div>

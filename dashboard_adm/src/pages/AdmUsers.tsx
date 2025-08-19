@@ -28,6 +28,7 @@ interface User {
   terceiroPonto: string;
   quartoPonto: string;
   equipe_msg: string;
+  equipe_supervisor: string;
 }
 
 export const AdmUsers = () => {
@@ -39,6 +40,7 @@ export const AdmUsers = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newCargo, setNewCargo] = useState("");
   const [newEquipe_msg, setNewEquipe_msg] = useState("");
+  const [newEquipe_supervisor, setNewEquipe_supervisor] = useState("");
   const [modalEdit, setModalEdit] = useState(false);
   const [editUserData, setEditUserData] = useState<User | null>(null);
   const [disabledFilter, setDisabledFilter] = useState<null | boolean>(null);
@@ -87,6 +89,7 @@ export const AdmUsers = () => {
           ...editUserData,
           cargo: newCargo || editUserData.cargo,
           equipe_msg: newEquipe_msg || editUserData.equipe_msg,
+          equipe_supervisor: newEquipe_supervisor || editUserData.equipe_supervisor,
         };
 
         const userRef = doc(db, "usuarios", updatedUser.id);
@@ -99,6 +102,7 @@ export const AdmUsers = () => {
           terceiroPonto: updatedUser.terceiroPonto,
           quartoPonto: updatedUser.quartoPonto,
           equipe_msg: updatedUser.equipe_msg,
+          equipe_supervisor: updatedUser.equipe_supervisor,
         });
 
         setUsers((prev) =>
@@ -116,6 +120,7 @@ export const AdmUsers = () => {
         const updatedFields: Partial<User> = {};
         if (newCargo) updatedFields.cargo = newCargo;
         if (newEquipe_msg) updatedFields.equipe_msg = newEquipe_msg;
+        if (newEquipe_supervisor) updatedFields.equipe_supervisor = newEquipe_supervisor;
 
         if (Object.keys(updatedFields).length > 0) {
           const userRef = doc(db, "usuarios", selectedUser.id);
@@ -136,6 +141,7 @@ export const AdmUsers = () => {
           setSelectedUser(null);
           setNewCargo("");
           setNewEquipe_msg("");
+          setNewEquipe_supervisor("");
         }
       }
     } catch (error: any) {
@@ -537,6 +543,21 @@ export const AdmUsers = () => {
                 <option value="equipe_6110">equipe_6110</option>
                 <option value="equipe_2535">equipe_2535</option>
                 <option value="equipe_9272">equipe_9272</option>
+              </select>
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Equipe
+              </label>
+              <select
+                value={newEquipe_supervisor}
+                onChange={(e) => setNewEquipe_supervisor(e.target.value)}
+                className="border border-gray-300 p-2 rounded w-full mb-4"
+              >
+                <option value="">{editUserData.equipe_supervisor}</option>
+                <option value="equipe_frank">Equipe Frank</option>
+                <option value="equipe_aguia">Equipe Águia</option>
+                <option value="equipe_ricardo">Equipe Ricardo</option>
               </select>
             </div>
 
