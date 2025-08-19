@@ -545,6 +545,7 @@ export const AdmUsers = () => {
                 <option value="equipe_6110">equipe_6110</option>
                 <option value="equipe_2535">equipe_2535</option>
                 <option value="equipe_9272">equipe_9272</option>
+                <option value="equipe_nova">equipe_nova</option>
               </select>
             </div>
             <div>
