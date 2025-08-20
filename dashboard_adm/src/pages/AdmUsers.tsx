@@ -563,7 +563,7 @@ export const AdmUsers = () => {
               >
                 <option value="equipe_frank">Equipe Frank</option>
                 <option value="equipe_antiga">Equipe Antiga</option>
-                <option value="equipe_ricardo">Equipe Ricardo</option>
+                <option value="equipe_rodrigo">Equipe Rodrigo</option>
               </select>
             </div>
 

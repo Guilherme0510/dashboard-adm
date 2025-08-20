@@ -266,8 +266,8 @@ export const CreateUser: React.FC = () => {
             <option className="text-black" value="equipe_antiga">
               Equipe Antiga
             </option>
-            <option className="text-black" value="equipe_ricardo">
-              Equipe Ricardo
+            <option className="text-black" value="equipe_rodrigo">
+              Equipe Rodrigo
             </option>
           </select>
         </div>
