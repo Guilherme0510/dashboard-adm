@@ -8,7 +8,6 @@ import {
   faCircleExclamation,
   faLeftLong,
   faPenToSquare,
-  faRefresh,
   faRightLong,
   faSearch,
   faUpDown,
@@ -19,6 +18,7 @@ import { toast, ToastContainer } from "react-toastify";
 
 interface User {
   id: string;
+  uid: string;
   nome: string;
   email: string;
   cargo: string;
@@ -56,14 +56,20 @@ export const AdmUsers = () => {
   const totalPages = Math.ceil(filteredUsers.length / ItemsPerPage);
 
   const fetchAllInfoUsers = async () => {
-    const usersCollection = collection(db, "usuarios");
-    const usersSnapshot = await getDocs(usersCollection);
-    const allUsers = usersSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as User[];
-    setUsers(allUsers);
-    setFilteredUsers(allUsers);
+    try {
+      const usersCollection = collection(db, "usuarios");
+      const usersSnapshot = await getDocs(usersCollection);
+
+      const allUsers = usersSnapshot.docs.map((doc) => ({
+        uid: doc.data().uid ?? doc.id,
+        ...doc.data(),
+      })) as unknown as User[];
+
+      setUsers(allUsers);
+      setFilteredUsers(allUsers);
+    } catch (error) {
+      console.error("Erro ao buscar usuários:", error);
+    }
   };
 
   const handleOpenModalEdit = (user: User) => {
@@ -252,6 +258,28 @@ export const AdmUsers = () => {
     }
   };
 
+const copyToClipboard = (text: string) => {
+  if (!navigator.clipboard) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+      document.execCommand("copy");
+    } catch (err) {
+      console.error("Erro ao copiar:", err);
+    }
+    document.body.removeChild(textarea);
+    return;
+  }
+
+  navigator.clipboard.writeText(text).catch((err) => {
+    console.error("Erro ao copiar:", err);
+  });
+};
+
   useEffect(() => {
     fetchAllInfoUsers();
   }, []);
@@ -299,6 +327,7 @@ export const AdmUsers = () => {
                   Cargo
                   <FontAwesomeIcon icon={faUpDown} data-tooltip-id="icon" />
                 </th>
+                <th className="p-2 text-left">UID</th>{" "}
                 <th className="p-2 text-left">
                   <select
                     className="bg-white text-black rounded p-1 text-sm"
@@ -337,24 +366,20 @@ export const AdmUsers = () => {
                 >
                   <td className="p-2 py-5 capitalize">{user.nome}</td>
                   <td className="p-2 py-5">{user.email}</td>
-
                   <td className="p-2 py-5 capitalize">{user.cargo}</td>
-                  <td className="text-start">
-                    <button
-                      onClick={() => setSelectedUser(user)}
-                      className="text-blue-500"
-                    >
-                      <FontAwesomeIcon
-                        icon={faRefresh}
-                        data-tooltip-id="troca_cargo"
-                      />
-                      <Tooltip id="troca_cargo" content="Trocar cargo" />
-                    </button>
+
+                  <td
+                    className="text-start cursor-pointer"
+                    onClick={() => copyToClipboard(user.uid)}
+                    title="Clique para copiar UID"
+                  >
+                    {user.uid}
                   </td>
-                  <td className="text-start">
+
+                  <td className="text-center d-flex g-2">
                     <button
                       onClick={() => handleOpenModalEdit(user)}
-                      className="text-yellow-500"
+                      className="text-yellow-500 mr-4"
                     >
                       <FontAwesomeIcon
                         icon={faPenToSquare}
@@ -362,8 +387,6 @@ export const AdmUsers = () => {
                       />
                       <Tooltip id="edit_user" content="Editar usuário" />
                     </button>
-                  </td>
-                  <td className="text-start">
                     <button
                       onClick={() => {
                         if (user.disabled) {
@@ -388,6 +411,7 @@ export const AdmUsers = () => {
                       />
                     </button>
                   </td>
+                  <td className="text-start"></td>
                 </tr>
               ))}
             </tbody>
