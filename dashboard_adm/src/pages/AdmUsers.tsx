@@ -61,9 +61,9 @@ export const AdmUsers = () => {
       const usersSnapshot = await getDocs(usersCollection);
 
       const allUsers = usersSnapshot.docs.map((doc) => ({
-        uid: doc.data().uid ?? doc.id,
-        ...doc.data(),
-      })) as unknown as User[];
+  id: doc.id, 
+  ...doc.data(),
+})) as User[];
 
       setUsers(allUsers);
       setFilteredUsers(allUsers);
@@ -342,7 +342,7 @@ const copyToClipboard = (text: string) => {
                       const value = e.target.value;
                       const newFilter = value === "" ? null : value === "true";
                       setDisabledFilter(newFilter);
-                      sortAndFilterData(sortField ?? "nome", newFilter); // mantém a ordenação atual
+                      sortAndFilterData(sortField ?? "nome", newFilter); 
                     }}
                   >
                     <option value="">Todos</option>
@@ -570,6 +570,7 @@ const copyToClipboard = (text: string) => {
                 <option value="equipe_2535">equipe_2535</option>
                 <option value="equipe_9272">equipe_9272</option>
                 <option value="equipe_nova">equipe_nova</option>
+                <option value="equipe_supervisao">equipe_supervisao</option>
               </select>
             </div>
             <div>
