@@ -96,7 +96,7 @@ export const AdmUsers = () => {
           cargo: newCargo || editUserData.cargo,
           equipe_msg: newEquipe_msg || editUserData.equipe_msg,
           equipe_supervisor:
-            newEquipe_supervisor || editUserData.equipe_supervisor,
+  newEquipe_supervisor ?? editUserData.equipe_supervisor ?? null,
         };
 
         const userRef = doc(db, "usuarios", updatedUser.id);

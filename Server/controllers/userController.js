@@ -1,6 +1,4 @@
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig.js';
-import admin from '../config/admFirebase.js'; 
+import admin from '../config/admFirebase.js';
 
 export const disableUser = async (req, res) => {
   const { userId } = req.body;
@@ -10,8 +8,11 @@ export const disableUser = async (req, res) => {
   }
 
   try {
-    const userRef = doc(db, 'usuarios', userId);
-    await updateDoc(userRef, { disabled: true });
+    const db = admin.firestore();
+
+    await db.collection('usuarios').doc(userId).update({
+      disabled: true,
+    });
 
     await admin.auth().updateUser(userId, { disabled: true });
 
@@ -30,8 +31,11 @@ export const activeUser = async (req, res) => {
   }
 
   try {
-    const userRef = doc(db, 'usuarios', userId);
-    await updateDoc(userRef, { disabled: false });
+    const db = admin.firestore();
+
+    await db.collection('usuarios').doc(userId).update({
+      disabled: false,
+    });
 
     await admin.auth().updateUser(userId, { disabled: false });
 
@@ -41,4 +45,3 @@ export const activeUser = async (req, res) => {
     res.status(500).json({ message: 'Erro ao ativar usuário', error });
   }
 };
-

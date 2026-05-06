@@ -4,13 +4,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_APP_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_APP_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_APP_FIREBASE_MEASUREMENT_ID
+  // apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
+  // authDomain: import.meta.env.VITE_APP_FIREBASE_AUTH_DOMAIN,
+  // projectId: import.meta.env.VITE_APP_FIREBASE_PROJECT_ID,
+  // storageBucket: import.meta.env.VITE_APP_FIREBASE_STORAGE_BUCKET,
+  // messagingSenderId: import.meta.env.VITE_APP_FIREBASE_MESSAGING_SENDER_ID,
+  // appId: import.meta.env.VITE_APP_FIREBASE_APP_ID,
+  // measurementId: import.meta.env.VITE_APP_FIREBASE_MEASUREMENT_ID
 
   // apiKey: "AIzaSyAv14rERK5d3G9_qwN-YOOGslPnPcDwtG0",
   // authDomain: "test-e9567.firebaseapp.com",
@@ -28,13 +28,13 @@ const firebaseConfig = {
   // appId: "1:214326679546:web:5102847e9f1ad98d7e7643",
   // measurementId: "G-L9QS3K0R1S"
 
-  // apiKey: "AIzaSyBeDoOf4QSzRj-v2l9y8zhz6nbVvv2q0X4",
-  // authDomain: "crm-search-6a76d.firebaseapp.com",
-  // projectId: "crm-search-6a76d",
-  // storageBucket: "crm-search-6a76d.firebasestorage.app",
-  // messagingSenderId: "653003039766",
-  // appId: "1:653003039766:web:c2ae6dee84813482f80137",
-  // measurementId: "G-VQX3GHQY6S"
+  apiKey: "AIzaSyBeDoOf4QSzRj-v2l9y8zhz6nbVvv2q0X4",
+  authDomain: "crm-search-6a76d.firebaseapp.com",
+  projectId: "crm-search-6a76d",
+  storageBucket: "crm-search-6a76d.firebasestorage.app",
+  messagingSenderId: "653003039766",
+  appId: "1:653003039766:web:c2ae6dee84813482f80137",
+  measurementId: "G-VQX3GHQY6S"
 };
 
 
