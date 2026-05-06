@@ -4,13 +4,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDxAoPntmqIeKh0oyleTOQfGdIti0qWrPI",
-    authDomain: "crm-maps-593d1.firebaseapp.com",
-    projectId: "crm-maps-593d1",
-    storageBucket: "crm-maps-593d1.firebasestorage.app",
-    messagingSenderId: "701120893959",
-    appId: "1:701120893959:web:5842b637e166d83a2346a2",
-    measurementId: "G-VKE8FZD0XS"
+    apiKey: "AIzaSyBeDoOf4QSzRj-v2l9y8zhz6nbVvv2q0X4",
+  authDomain: "crm-search-6a76d.firebaseapp.com",
+  projectId: "crm-search-6a76d",
+  storageBucket: "crm-search-6a76d.firebasestorage.app",
+  messagingSenderId: "653003039766",
+  appId: "1:653003039766:web:c2ae6dee84813482f80137",
+  measurementId: "G-VQX3GHQY6S"
   };
 
 
