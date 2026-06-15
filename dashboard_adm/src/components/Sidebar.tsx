@@ -124,7 +124,7 @@ export const Sidebar = () => {
           </NavLink>
         )}
 
-        {usuarioLogadoId === admUser || usuarioLogadoId === jonasUser && (
+        {(usuarioLogadoId === admUser || usuarioLogadoId === jonasUser) && (
           <>
             <div className="flex flex-col gap-1">
               <p className="font-semibold text-lg">Dados</p>
